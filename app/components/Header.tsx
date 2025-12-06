@@ -25,8 +25,8 @@ export function Header() {
         <div className="w-20 sm:w-24">
           <Logo />
         </div>
-        <p className="text-slate-300 text-sm font-sans">by</p>
-        <LogoTriggerdotdev className="w-16 sm:w-20 opacity-80 hover:opacity-100  transition duration-300" />
+        {/* <p className="text-slate-300 text-sm font-sans">by</p> */}
+        {/* <LogoTriggerdotdev className="w-16 sm:w-20 opacity-80 hover:opacity-100  transition duration-300" /> */}
       </div>
       <DocumentTitle />
       <ol className="flex text-sm items-center gap-2 px-4">
@@ -80,14 +80,14 @@ export function Header() {
           </PopoverContent>
         </Popover>
 
-        <li className="opacity-90 transition hover:cursor-pointer hover:opacity-100">
+        {/* <li className="opacity-90 transition hover:cursor-pointer hover:opacity-100">
           <GithubStar />
         </li>
         <li className="opacity-90 transition hover:cursor-pointer hover:opacity-100">
           <a href="https://discord.gg/JtBAxBr2m3" target="_blank">
             <DiscordIconTransparent />
           </a>
-        </li>
+        </li> */}
       </ol>
     </header>
   );

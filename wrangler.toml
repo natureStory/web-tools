@@ -1,12 +1,13 @@
-name = "jsonhero-io"
-type = "javascript"
+name = "web-tools"
 compatibility_date = "2022-02-01"
+main = "./dist/worker.js"
 
-account_id = "0e405dda228e3448f1366acb0bc341ef"
+
+account_id = "7c013056add27d48fba6bac18fecd661"
 workers_dev = true
 
 kv_namespaces = [ 
-  { binding = "DOCUMENTS", id = "8c6a9a71fc504abdaaa7aa409c7b2abd" }
+  { binding = "DOCUMENTS", id = "5f6a6d76b57846549ccddefa84ef63e0" }
 ]
 
 [vars]
@@ -14,20 +15,16 @@ GRAPH_JSON_COLLECTION = "jsonhero-dev"
 
 [site]
 bucket = "./public"
-entry-point = "."
 
 [build]
 command = "npm run build:worker"
 watch_dir = "build/index.js"
 
-[build.upload]
-format="service-worker"
-
 [env.production]
-route = "jsonhero.io/*"
+# route = "jsonhero.io/*"
 zone_id = "af3c12add61e94b88b3d2cbfb6f65782"
 kv_namespaces = [ 
-  { binding = "DOCUMENTS", id = "e517c369774a443eba95afff9128f7b6" }
+  { binding = "DOCUMENTS", id = "5f6a6d76b57846549ccddefa84ef63e0" }
 ]
 
 [env.production.vars]
