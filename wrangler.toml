@@ -7,7 +7,7 @@ account_id = "7c013056add27d48fba6bac18fecd661"
 workers_dev = true
 
 kv_namespaces = [ 
-  { binding = "DOCUMENTS", id = "5f6a6d76b57846549ccddefa84ef63e0" }
+  { binding = "DOCUMENTS", id = "819c29c9382a4845940675cbab4cb5cd" }
 ]
 
 [vars]
@@ -24,7 +24,7 @@ watch_dir = "build/index.js"
 # route = "jsonhero.io/*"
 zone_id = "af3c12add61e94b88b3d2cbfb6f65782"
 kv_namespaces = [ 
-  { binding = "DOCUMENTS", id = "5f6a6d76b57846549ccddefa84ef63e0" }
+  { binding = "DOCUMENTS", id = "819c29c9382a4845940675cbab4cb5cd" }
 ]
 
 [env.production.vars]
