@@ -34,22 +34,14 @@ export function JsonTreeView() {
   // This focuses and scrolls to the selected node when the selectedNodeId
   // is set from a source other than this tree (e.g. the search bar, path bar, related values).
   useEffect(() => {
-    if (
-      tree.focusedNodeId &&
-      selectedNodeId &&
-      tree.focusedNodeId !== selectedNodeId
-    ) {
-      if (selectedNodeId === "$") {
-        return;
-      }
-
-      if (selectedNodeSource !== "tree" && focusCount.current > 0) {
+    if (selectedNodeId && selectedNodeId !== "$") {
+      if (selectedNodeSource !== "tree") {
         focusCount.current = focusCount.current + 1;
         tree.focusNode(selectedNodeId);
         tree.scrollToNode(selectedNodeId);
       }
     }
-  }, [tree.focusedNodeId, goToNodeId, selectedNodeId, selectedNodeSource]);
+  }, [goToNodeId, selectedNodeId, selectedNodeSource]);
 
   // This is what syncs the tree view's focused node to the column view selected node
   const previousFocusedNodeId = useRef<string | null>(null);
