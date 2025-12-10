@@ -16,7 +16,7 @@ export function SearchBar() {
   const searchApi = useJsonSearchApi();
 
   useHotkeys(
-    "cmd+k,ctrl+k",
+    "cmd+f,ctrl+f",
     (e) => {
       e.preventDefault();
       setIsOpen(true);
@@ -40,7 +40,7 @@ export function SearchBar() {
               ⌘
             </ShortcutIcon>
             <ShortcutIcon className="w-4 h-4 text-sm bg-slate-200 transition group-hover:bg-slate-100 dark:bg-slate-700 dark:group-hover:bg-slate-600">
-              K
+              F
             </ShortcutIcon>
           </div>
         </div>

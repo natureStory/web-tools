@@ -24,7 +24,7 @@ export const meta: MetaFunction = ({ location }) => {
   const description =
     "JSON Hero makes reading and understand JSON files easy by giving you a clean and beautiful UI packed with extra features.";
   return {
-    title: "JSON Hero - a beautiful JSON viewer for the web",
+    title: "前端开发工具箱",
     viewport: "width=device-width,initial-scale=1",
     description,
     "og:image": `https://jsonhero.io${openGraphImage}`,

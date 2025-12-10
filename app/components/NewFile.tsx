@@ -11,10 +11,10 @@ export function NewFile() {
       </div>
       <DragAndDropForm />
 
-      <div className="mt-4 pt-5">
+      {/* <div className="mt-4 pt-5">
         <Title className="mb-2 text-slate-200">No JSON? Try it out:</Title>
         <SampleUrls />
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -77,8 +77,8 @@ export function DragAndDropForm() {
           />
           <p className={`${isDragActive ? "text-lime-500" : ""}`}>
             {isDragActive
-              ? "Now drop to open it…"
-              : "Drop a JSON file here, or click to select"}
+              ? "现在拖拽打开它…"
+              : "拖拽 JSON 文件到这里, 或点击选择"}
           </p>
         </div>
 

@@ -21,29 +21,28 @@ export function Footer() {
         <li className="flex items-center">
           <ArrowKeysIcon className="transition text-slate-300 dark:text-slate-500" />
           <Body className="pl-2 pr-4 text-slate-800 transition dark:text-white">
-            Navigate
+            选取
           </Body>
         </li>
         <li className="flex items-center">
           <SquareBracketsIcon className="transition text-slate-300 dark:text-slate-500" />
           <Body className="pl-2 pr-4 text-slate-800 transition dark:text-white">
-            History
+            历史
           </Body>
         </li>
         <li className="flex items-center">
           <EscapeKeyIcon className="transition text-slate-300 dark:text-slate-500" />
           <Body className="pl-2 pr-4 text-slate-800 transition dark:text-white whitespace-nowrap">
-            Reset path
+            重置路径
           </Body>
         </li>
         <li className="flex items-center">
           <CopyShortcutIcon className="transition text-slate-300 dark:text-slate-500" />
           <Body className="flex pl-2 pr-4 text-slate-800 transition dark:text-white">
-            Copy&nbsp;
+            复制&nbsp;
             <span className="hidden lg:flex whitespace-nowrap">
-              selected&nbsp;
+              选中节点&nbsp;
             </span>
-            node
           </Body>
         </li>
       </ol>
