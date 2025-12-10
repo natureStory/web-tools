@@ -118,7 +118,7 @@ export function SearchPalette({
             {...cb.getInputProps({ onKeyDown: handleInputKeyDown })}
             type="text"
             spellCheck="false"
-            placeholder="Search the JSON…"
+            placeholder="搜索 JSON…"
             className="w-full pl-12 pr-4 py-4 rounded-sm text-slate-900 bg-slate-100 text-2xl caret-indigo-700 border-indigo-700 transition dark:text-white dark:bg-slate-900 focus:outline-none focus:ring focus:ring-indigo-700"
           />
         </label>
@@ -128,15 +128,15 @@ export function SearchPalette({
               (!searchState.results || searchState.results.length === 0) && (
                 <div className="results-loading flex">
                   <LoadingIcon className="animate-spin h-5 w-5 mr-1"></LoadingIcon>
-                  <Body className="text-slate-400">Loading…</Body>
+                  <Body className="text-slate-400">加载中…</Body>
                 </div>
               )}
             {searchState.results && searchState.results.length > 0 && (
               <div className="results-returned">
                 <Body className="text-slate-400">
                   {searchState.results.length === 1
-                    ? "1 result"
-                    : `${searchState.results.length} results`}
+                    ? "1 个结果"
+                    : `${searchState.results.length} 个结果`}
                 </Body>
               </div>
             )}
@@ -147,7 +147,7 @@ export function SearchPalette({
                 <div className="results-none flex">
                   <ExclamationIcon className="h-5 w-5 mr-1 text-white"></ExclamationIcon>
                   <Body className="text-slate-400">
-                    No results for "{cb.inputValue}"
+                    没有找到 "{cb.inputValue}" 的结果
                   </Body>
                 </div>
               )}
@@ -190,19 +190,19 @@ export function SearchPalette({
       <div className="flex items-center w-full gap-4 px-3 py-2 border-t-[1px] bg-slate-100 border-slate-200 rounded-br-lg rounded-bl-lg transition dark:bg-slate-900 dark:border-slate-700">
         <div className="flex items-center gap-1">
           <ShortcutIcon className="w-4 h-4 text-sm text-slate-900 bg-slate-300 transition duration-75 group-hover:bg-slate-100 dark:bg-slate-500 dark:group-hover:bg-slate-600">
-            ⏎
+            回车
           </ShortcutIcon>
-          <Body className="text-slate-700 dakr:text-slate-500">to select</Body>
+          <Body className="text-slate-700 dakr:text-slate-500">选择</Body>
         </div>
         <div className="flex items-center gap-1">
           <ArrowKeysUpDownIcon className="transition text-slate-300 dark:text-slate-500" />
           <Body className="text-slate-700 dakr:text-slate-500">
-            to navigate
+            移动选中节点
           </Body>
         </div>
         <div className="flex items-center gap-1">
           <EscapeKeyIcon className="transition text-slate-300 dark:text-slate-500" />
-          <Body className="text-slate-700 dakr:text-slate-500">to close</Body>
+          <Body className="text-slate-700 dakr:text-slate-500">关闭</Body>
         </div>
       </div>
     </>

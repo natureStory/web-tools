@@ -21,7 +21,7 @@ export function Footer() {
         <li className="flex items-center">
           <ArrowKeysIcon className="transition text-slate-300 dark:text-slate-500" />
           <Body className="pl-2 pr-4 text-slate-800 transition dark:text-white">
-            选取
+            移动选中节点
           </Body>
         </li>
         <li className="flex items-center">
