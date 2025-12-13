@@ -16,7 +16,7 @@ export function PreviewBox({ link, className, children }: PreviewBoxProps) {
   return (
     <div className={className}>
       <Title className="text-slate-700 transition dark:text-slate-400 mb-2">
-        Preview
+        预览
       </Title>
       <div
         onClick={onClick}

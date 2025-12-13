@@ -12,12 +12,12 @@ export function PropertiesFloat(info: PropertiesFloatProps) {
     <DataTable
       rows={[
         {
-          key: "Formatted value",
+          key: "格式化值",
           value: formatValue(info.type) ?? "",
           icon: <ValueIcon type={info.type} />,
         },
         {
-          key: "Type",
+          key: "类型",
           value: info.type.name,
         },
       ]}

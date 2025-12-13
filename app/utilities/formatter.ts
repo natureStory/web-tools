@@ -43,9 +43,9 @@ export function formatValue(
       if (type.value.length == 0) {
         return formatRawValue(type);
       } else if (type.value.length === 1) {
-        return `1 item`;
+        return `1 个元素`;
       } else {
-        return `${type.value.length} items`;
+        return `${type.value.length} 个元素`;
       }
     }
     case "object": {
@@ -56,9 +56,9 @@ export function formatValue(
       if (Object.keys(type.value).length == 0) {
         return formatRawValue(type);
       } else if (Object.keys(type.value).length === 1) {
-        return `1 field`;
+        return `1 个字段`;
       } else {
-        return `${Object.keys(type.value).length} fields`;
+        return `${Object.keys(type.value).length} 个字段`;
       }
     }
     case "bool": {

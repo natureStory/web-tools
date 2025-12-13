@@ -41,7 +41,7 @@ export function RelatedValues({ relatedPaths }: RelatedValuesProps) {
       {relatedValuesGroups.length > 0 && (
         <div className="my-4">
           <Title className="mb-2 text-slate-700 transition dark:text-slate-400">
-            Related values
+            相关值
           </Title>
           {relatedValuesGroups.map((relatedValuesGroup, i) => {
             return (

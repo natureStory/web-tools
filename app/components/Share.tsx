@@ -6,7 +6,7 @@ import { useJsonColumnViewState } from "~/hooks/useJsonColumnView";
 const buttonDefault = (
   <>
     <ClipboardIcon className="h-4 w-4 mr-[2px]" />
-    <span>Copy</span>
+    <span>复制</span>
   </>
 );
 
@@ -34,11 +34,11 @@ export function Share() {
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(link).then(
       function () {
-        setCopyText(<span>Copied!</span>);
+        setCopyText(<span>已复制！</span>);
         setCopied(true);
       },
       function (err) {
-        setCopyText(<span>Failed to copy</span>);
+        setCopyText(<span>复制失败</span>);
         setCopied(true);
       }
     );

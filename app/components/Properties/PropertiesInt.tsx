@@ -16,12 +16,12 @@ export function PropertiesInt({ type }: { type: JSONIntType }) {
       <DataTable
         rows={[
           {
-            key: "Formatted value",
+            key: "格式化值",
             value: formatValue(type) ?? "",
             icon: <ValueIcon type={type} />,
           },
           {
-            key: "Type",
+            key: "类型",
             value: type.name,
           },
         ]}

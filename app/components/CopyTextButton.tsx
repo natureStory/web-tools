@@ -19,11 +19,11 @@ export function CopyTextButton({ value, className }: CopyTextButtonProps) {
   return (
     <CopyText className={`${className}`} value={value} onCopied={onCopied}>
       {copied ? (
-        <Body>Copied!</Body>
+        <Body>已复制！</Body>
       ) : (
         <div className="flex items-center">
           <ClipboardIcon className="h-4 w-4 mr-[2px]" />
-          <Body>Copy</Body>
+          <Body>复制</Body>
         </div>
       )}
     </CopyText>

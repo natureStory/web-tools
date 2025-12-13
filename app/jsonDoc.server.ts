@@ -37,13 +37,13 @@ export async function createFromUrlOrRawJson(
   }
 
   if (isJSON(urlOrJson)) {
-    return createFromRawJson("Untitled", urlOrJson);
+    return createFromRawJson("未命名", urlOrJson);
   }
 
   // Wrapper for createFromRawJson to handle XML
   // TODO ? change from urlOrJson to urlOrJsonOrXml
   if (isXML(urlOrJson)) {
-    return createFromRawXml("Untitled", urlOrJson);
+    return createFromRawXml("未命名", urlOrJson);
   }
 }
 

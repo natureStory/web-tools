@@ -60,7 +60,7 @@ export let loader: LoaderFunction = async ({ request, context }) => {
 
   if (base64EncodedJson) {
     const doc = await createFromRawJson(
-      title ?? "Untitled",
+      title ?? "未命名",
       atob(base64EncodedJson),
       options
     );
