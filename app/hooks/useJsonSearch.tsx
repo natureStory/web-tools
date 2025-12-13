@@ -199,6 +199,7 @@ export function JsonSearchProvider({
 
   const workerRef = useRef<Worker | null>();
 
+  // 初始化 Worker（只执行一次）
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.Worker === "undefined") {
       return;
@@ -212,6 +213,13 @@ export function JsonSearchProvider({
     worker.onmessage = handleWorkerMessage;
 
     workerRef.current = worker;
+  }, [handleWorkerMessage]);
+
+  // 当 JSON 数据变化时，重新初始化搜索索引
+  useEffect(() => {
+    if (!workerRef.current) {
+      return;
+    }
 
     workerRef.current.postMessage({
       type: "initialize-index",
@@ -219,7 +227,7 @@ export function JsonSearchProvider({
         json,
       },
     });
-  }, [json, workerRef.current]);
+  }, [json]);
 
   useEffect(() => {
     if (state.status !== "searching") {
