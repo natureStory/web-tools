@@ -115,13 +115,31 @@ export async function getDocument(
 
 export async function updateDocument(
   slug: string,
-  title: string
+  title?: string,
+  contents?: string
 ): Promise<JSONDocument | undefined> {
   const document = await getDocument(slug);
 
   if (!document) return;
 
-  const updated = { ...document, title };
+  let updated: JSONDocument;
+
+  if (document.type === "raw") {
+    updated = {
+      ...document,
+      title: title !== undefined ? title : document.title,
+      contents: contents !== undefined ? contents : document.contents,
+    };
+    // 验证 JSON 格式
+    if (contents !== undefined) {
+      JSON.parse(contents);
+    }
+  } else {
+    updated = {
+      ...document,
+      title: title !== undefined ? title : document.title,
+    };
+  }
 
   await DOCUMENTS.put(slug, JSON.stringify(updated));
 

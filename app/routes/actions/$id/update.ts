@@ -6,12 +6,21 @@ import { updateDocument } from "~/jsonDoc.server";
 export const action: ActionFunction = async ({ params, request, context }) => {
   invariant(params.id, "expected params.id");
 
-  const title = (await request.formData()).get("title");
+  const formData = await request.formData();
+  const title = formData.get("title");
+  const contents = formData.get("contents");
 
-  invariant(typeof title === "string", "expected title");
+  // 至少需要一个字段
+  if (!title && !contents) {
+    return json({ error: "Expected at least title or contents" });
+  }
 
   try {
-    const document = await updateDocument(params.id, title);
+    const document = await updateDocument(
+      params.id,
+      title ? String(title) : undefined,
+      contents ? String(contents) : undefined
+    );
 
     if (!document) return json({ error: "No document with that slug" });
 
@@ -19,7 +28,7 @@ export const action: ActionFunction = async ({ params, request, context }) => {
       sendEvent({
         type: "update-doc",
         id: document.id,
-        title,
+        title: title ? String(title) : document.title,
       })
     );
 

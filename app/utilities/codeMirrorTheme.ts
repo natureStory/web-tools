@@ -18,7 +18,7 @@ export function darkTheme(): Extension {
     background = "rgb(15,23,42)",
     tooltipBackground = "#353a42",
     selection = "#3E4451",
-    cursor = "#528bff";
+    cursor = "#22c55e";
 
   const jsonHeroEditorTheme = EditorView.theme(
     {
@@ -33,7 +33,7 @@ export function darkTheme(): Extension {
         fontSize: "14px",
       },
 
-      ".cm-cursor, .cm-dropCursor": { borderLeftColor: cursor },
+      ".cm-cursor, .cm-dropCursor": { borderLeftColor: cursor, borderLeftWidth: "3px" },
       "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
         { backgroundColor: selection },
 
@@ -160,7 +160,7 @@ export function lightTheme(): Extension {
     background = "rgb(248,250,252)",
     tooltipBackground = "#353a42",
     selection = "#D0D0D0",
-    cursor = "#528bff";
+    cursor = "#22c55e";
 
   const jsonHeroEditorTheme = EditorView.theme(
     {
@@ -175,7 +175,7 @@ export function lightTheme(): Extension {
         fontSize: "14px",
       },
 
-      ".cm-cursor, .cm-dropCursor": { borderLeftColor: cursor },
+      ".cm-cursor, .cm-dropCursor": { borderLeftColor: cursor, borderLeftWidth: "3px" },
       "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
         { backgroundColor: selection },
 

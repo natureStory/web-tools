@@ -25,7 +25,7 @@ export function SearchBar() {
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => !isOpen && searchApi.reset()}>
+    <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogTrigger
         className="focus:outline-none focus-visible:outline-none"
         onClick={() => setIsOpen(true)}
