@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/outline";
+import { ChevronDownIcon, ChevronRightIcon, PencilIcon } from "@heroicons/react/outline";
 import { useEffect, useRef } from "react";
 import {
   useJsonColumnViewAPI,
@@ -10,6 +10,7 @@ import { VirtualNode } from "~/hooks/useVirtualTree";
 import { CopySelectedNodeShortcut } from "./CopySelectedNode";
 import { Body } from "./Primitives/Body";
 import { Mono } from "./Primitives/Mono";
+import { useNodeEdit } from "~/hooks/useNodeEdit";
 
 export function JsonTreeView() {
   const { selectedNodeId, selectedNodeSource } = useJsonColumnViewState();
@@ -115,6 +116,19 @@ function TreeViewNode({
   onToggle?: (node: JsonTreeViewNode, e: MouseEvent) => void;
 }) {
   const { node, virtualItem, depth } = virtualNode;
+  const {
+    isEditing,
+    editValue,
+    hasError,
+    canEdit,
+    isSaving,
+    inputRef,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    setEditValue,
+    handleKeyDown,
+  } = useNodeEdit(node.id);
 
   const indentClassName = computeTreeNodePaddingClass(depth);
 
@@ -135,15 +149,24 @@ function TreeViewNode({
     >
       <div
         className={`h-full flex pl-5 rounded-sm select-none ${
+          isEditing ? 'ring-2 ring-lime-500' : ''
+        } ${
           isSelected
             ? "bg-indigo-700"
             : virtualItem.index % 2
             ? "dark:bg-slate-900"
             : "bg-slate-100 bg-opacity-90 dark:bg-slate-800 dark:bg-opacity-30"
         }`}
+        onDoubleClick={(e) => {
+          if (canEdit && !isEditing) {
+            e.preventDefault();
+            e.stopPropagation();
+            startEdit();
+          }
+        }}
       >
         <div className={`pl-2 w-2/6 items-center flex`}>
-          {node.children && node.children.length > 0 && (
+          {node.children && node.children.length > 0 && !isEditing && (
             <span
               onClick={(e) => {
                 if (onToggle) {
@@ -184,27 +207,73 @@ function TreeViewNode({
         </div>
 
         <div className="flex w-4/6 items-center">
-          <span className="mr-2">
-            {node.icon && (
-              <node.icon
-                className={`h-5 w-5 ${
-                  isSelected
-                    ? "text-slate-100"
-                    : "text-slate-400 dark:text-slate-500"
-                }`}
+          {isEditing ? (
+            <div className="flex items-center gap-2 flex-grow pr-4">
+              <input
+                ref={inputRef}
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={saveEdit}
+                className={`flex-grow px-2 py-1 text-sm rounded border ${
+                  hasError
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-slate-300 focus:ring-lime-500'
+                } focus:outline-none focus:ring-1 dark:bg-slate-700 dark:text-slate-100 dark:border-slate-500`}
+                disabled={isSaving}
               />
-            )}
-          </span>
-          {node.subtitle && (
-            <Mono
-              className={`truncate pr-1 transition ${
-                isSelected
-                  ? "text-slate-100"
-                  : "text-slate-500 dark:text-slate-200"
-              }`}
-            >
-              {node.subtitle}
-            </Mono>
+              {isSaving && (
+                <span className="text-xs text-slate-400">保存中...</span>
+              )}
+              {hasError && (
+                <span className="text-xs text-red-500">格式错误</span>
+              )}
+            </div>
+          ) : (
+            <>
+              <span className="mr-2">
+                {node.icon && (
+                  <node.icon
+                    className={`h-5 w-5 ${
+                      isSelected
+                        ? "text-slate-100"
+                        : "text-slate-400 dark:text-slate-500"
+                    }`}
+                  />
+                )}
+              </span>
+              {node.subtitle && (
+                <Mono
+                  className={`truncate pr-1 transition ${
+                    isSelected
+                      ? "text-slate-100"
+                      : "text-slate-500 dark:text-slate-200"
+                  }`}
+                >
+                  {node.subtitle}
+                </Mono>
+              )}
+              {canEdit && isSelected && !node.children && (
+                <span 
+                  title="点击编辑"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startEdit();
+                  }}
+                  className="cursor-pointer"
+                >
+                  <PencilIcon
+                    className={`flex-none w-3 h-3 ml-2 opacity-60 hover:opacity-100 transition-opacity ${
+                      isSelected
+                        ? "text-slate-100"
+                        : "text-slate-400"
+                    }`}
+                  />
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>

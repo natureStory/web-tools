@@ -106,7 +106,12 @@ type CollapseAllNodesAction = {
   type: "COLLAPSE_ALL_NODES"
 };
 
-type TreeAction =
+type UpdateNodesAction<T extends { id: string; children?: T[] }> = {
+  type: "UPDATE_NODES";
+  nodes: T[];
+};
+
+type TreeAction<T extends { id: string; children?: T[] } = any> =
   | ToggleNodeAction
   | MoveNodeAction
   | FocusNodeAction
@@ -116,7 +121,8 @@ type TreeAction =
   | RestoreStateAction
   | ExpandAllOnPathAction
   | BlurAction
-  | CollapseAllNodesAction;
+  | CollapseAllNodesAction
+  | UpdateNodesAction<T>;
 
 function expandNode<T extends { id: string; children?: T[] }>(
   state: TreeState<T>,
@@ -205,7 +211,7 @@ function toggleAllChildren<T extends { id: string; children?: T[] }>(
 export function useVirtualTree<T extends { id: string; children?: T[] }, R>(
   options: UseVirtualTreeOptions<T, R>
 ): UseVirtualTreeInstance<T> {
-  const reducer = useCallback<Reducer<TreeState<T>, TreeAction>>(
+  const reducer = useCallback<Reducer<TreeState<T>, TreeAction<T>>>(
     (state, action) => {
       switch (action.type) {
         case "BLUR": {
@@ -453,6 +459,17 @@ export function useVirtualTree<T extends { id: string; children?: T[] }, R>(
             ),
           };
         }
+        case "UPDATE_NODES": {
+          return {
+            ...state,
+            nodes: action.nodes,
+            items: createNodeItems(
+              action.nodes,
+              0,
+              state.collapsedState
+            ),
+          };
+        }
         default:
           return state;
       }
@@ -473,7 +490,7 @@ export function useVirtualTree<T extends { id: string; children?: T[] }, R>(
   );
 
   const [state, dispatch] = useReducer<
-    Reducer<TreeState<T>, TreeAction>,
+    Reducer<TreeState<T>, TreeAction<T>>,
     { nodes: T[] }
   >(
     reducer,
@@ -484,6 +501,14 @@ export function useVirtualTree<T extends { id: string; children?: T[] }, R>(
   );
 
   const isStateRestored = useRef<boolean>(false);
+
+  // 当 nodes 更新时，更新 state 中的 nodes 和 items
+  useEffect(() => {
+    dispatch({
+      type: "UPDATE_NODES",
+      nodes: options.nodes,
+    });
+  }, [options.nodes]);
 
   // This is setting the state
   useEffect(() => {
@@ -631,7 +656,7 @@ function createNodeItems<T extends { id: string; children?: T[] }>(
 }
 
 function createTreeProps<T extends { id: string; children?: T[] }>(
-  dispatch: Dispatch<TreeAction>
+  dispatch: Dispatch<TreeAction<T>>
 ): () => React.HTMLAttributes<HTMLElement> {
   return () => ({
     role: "tree",
@@ -697,7 +722,7 @@ function createItemProps<T extends { id: string; children?: T[] }>(
   item: TreeNodeItem<T>,
   virtualItem: VirtualItem,
   state: TreeState<T>,
-  dispatch: Dispatch<TreeAction>
+  dispatch: Dispatch<TreeAction<T>>
 ): () => React.HTMLAttributes<HTMLElement> {
   const { depth, pos, size, node, isCollapsed } = item;
 
