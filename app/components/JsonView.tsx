@@ -1,6 +1,7 @@
 import React from "react";
 import { PathBar, PathHistoryControls } from "./PathBar";
 import { SearchBar } from "./SearchBar";
+import { DeduplicateBar } from "./DeduplicateBar";
 
 export function JsonView({ children }: { children: React.ReactNode }) {
   return (
@@ -12,7 +13,10 @@ export function JsonView({ children }: { children: React.ReactNode }) {
         <div className="flex-1 pr-2 min-w-0">
           <PathBar />
         </div>
-        <SearchBar />
+        <div className="flex items-center gap-2">
+          <SearchBar />
+          <DeduplicateBar />
+        </div>
       </div>
 
       {children}

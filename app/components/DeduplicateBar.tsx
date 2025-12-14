@@ -1,22 +1,18 @@
-import { SearchIcon } from "@heroicons/react/outline";
+import { DuplicateIcon } from "@heroicons/react/outline";
 import { ShortcutIcon } from "./Icons/ShortcutIcon";
 import { Body } from "./Primitives/Body";
 import { Dialog, DialogTrigger, DialogContent } from "./UI/Dialog";
 
 import classnames from "~/utilities/classnames";
-import { SearchPalette } from "./SearchPalette";
+import { DeduplicatePalette } from "./DeduplicatePalette";
 import { useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-import { useJsonColumnViewAPI } from "~/hooks/useJsonColumnView";
-import { useJsonSearchApi } from "~/hooks/useJsonSearch";
 
-export function SearchBar() {
+export function DeduplicateBar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { goToNodeId } = useJsonColumnViewAPI();
-  const searchApi = useJsonSearchApi();
 
   useHotkeys(
-    "cmd+f,ctrl+f",
+    "cmd+r,ctrl+r",
     (e) => {
       e.preventDefault();
       setIsOpen(true);
@@ -32,15 +28,15 @@ export function SearchBar() {
       >
         <div className="flex justify-between items-center group w-[120px] py-[3px] rounded bg-slate-300 transition hover:bg-slate-400 hover:bg-opacity-50 dark:bg-slate-800 dark:text-slate-400 hover:cursor-pointer hover:dark:bg-slate-700 hover:dark:bg-opacity-70">
           <div className="flex items-center pl-1">
-            <SearchIcon className="w-4 h-4 mr-1" />
-            <Body>搜索…</Body>
+            <DuplicateIcon className="w-4 h-4 mr-1" />
+            <Body>去重…</Body>
           </div>
           <div className="flex items-center gap-1 pr-1">
             <ShortcutIcon className="w-4 h-4 text-sm bg-slate-200 transition group-hover:bg-slate-100 dark:bg-slate-700 dark:group-hover:bg-slate-600">
               ⌘
             </ShortcutIcon>
             <ShortcutIcon className="w-4 h-4 text-sm bg-slate-200 transition group-hover:bg-slate-100 dark:bg-slate-700 dark:group-hover:bg-slate-600">
-              F
+              R
             </ShortcutIcon>
           </div>
         </div>
@@ -55,13 +51,7 @@ export function SearchBar() {
           "bg-white border-[1px] border-slate-500 dark:border-slate-700 dark:bg-slate-800"
         )}
       >
-        <SearchPalette
-          onClose={() => setIsOpen(false)}
-          onSelect={(entry) => {
-            setIsOpen(false);
-            goToNodeId(entry, "search");
-          }}
-        />
+        <DeduplicatePalette onClose={() => setIsOpen(false)} />
       </DialogContent>
     </Dialog>
   );
