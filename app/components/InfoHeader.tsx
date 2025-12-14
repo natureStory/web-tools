@@ -58,7 +58,7 @@ export function InfoHeader({ relatedPaths }: InfoHeaderProps) {
     <div className="mb-4 pb-4">
       <div className="flex items-center">
         <Title className="flex-1 mr-2 overflow-hidden overflow-ellipsis break-words text-slate-700 transition dark:text-slate-200">
-          { selectedName ?? "nothing" }
+          属性：{ selectedName ?? "未选择任何节点" }
         </Title>
         <div>
           <ValueIcon
@@ -79,7 +79,7 @@ export function InfoHeader({ relatedPaths }: InfoHeaderProps) {
               hovering ? "bg-slate-100 dark:bg-slate-700" : "bg-transparent"
             }`}
           >
-            {selectedNode.name === "$ref" && checkPathExists(json, newPath) ? (
+            值：{selectedNode.name === "$ref" && checkPathExists(json, newPath) ? (
               <button onClick={handleClick}>
                 {formatRawValue(selectedInfo)}
               </button>
@@ -101,9 +101,9 @@ export function InfoHeader({ relatedPaths }: InfoHeaderProps) {
       </div>
       <div className="flex text-gray-400">
         <Body className="flex-1">
-          {concatenated(getHierarchicalTypes(selectedInfo))}
+          类型：{concatenated(getHierarchicalTypes(selectedInfo))}
         </Body>
-        {canBeNull && <Body>Can be null</Body>}
+        {canBeNull && <Body>可为空</Body>}
       </div>
     </div>
   );
@@ -120,7 +120,7 @@ function EmptyState() {
     <div className="mb-4 pb-4 border-b border-slate-300">
       <div className="flex items-center">
         <Title className="flex-1 mr-2 text-slate-800 transition dark:text-slate-300">
-          Nothing selected
+          未选择任何节点
         </Title>
       </div>
       <div>
