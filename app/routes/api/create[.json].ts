@@ -1,7 +1,7 @@
 import { ActionFunction, json, LoaderFunction } from "remix";
 import invariant from "tiny-invariant";
 import { sendEvent } from "~/graphJSON.server";
-import { createFromRawJson, CreateJsonOptions } from "~/jsonDoc.server";
+import { createFromRawJson, CreateJsonOptions } from "~/jsonDoc.client";
 
 export const loader: LoaderFunction = async ({ request }) => {
   if (request.method === "OPTIONS") {

@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useFetcher } from "remix";
 import { useJsonDoc } from "./useJsonDoc";
 import { useJson } from "./useJson";
 import { JSONHeroPath } from "@jsonhero/path";
+import { updateDocument } from "~/jsonDoc.client";
 
 export function useNodeEdit(nodeId: string) {
   const [json, setJson] = useJson();
   const { doc } = useJsonDoc();
-  const updateDoc = useFetcher();
+  const [isSaving, setIsSaving] = useState(false);
   
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
@@ -118,27 +118,25 @@ export function useNodeEdit(nodeId: string) {
     }
 
     try {
+      setIsSaving(true);
+      
       // 使用函数式更新确保基于最新状态
-      setJson((currentJson) => {
-        // 创建 JSON 的新副本（深拷贝）
-        const newJson = JSON.parse(JSON.stringify(currentJson));
-        
-        // 更新新的 JSON 副本
-        const path = new JSONHeroPath(nodeId);
-        path.set(newJson, validation.value);
-        
-        // 提交到服务器
-        const formData = new FormData();
-        formData.append("contents", JSON.stringify(newJson, null, 2));
-        
-        updateDoc.submit(formData, {
-          method: "post",
-          action: `/actions/${doc.id}/update`,
+      const newJson = await new Promise<any>((resolve) => {
+        setJson((currentJson: any) => {
+          // 创建 JSON 的新副本（深拷贝）
+          const updated = JSON.parse(JSON.stringify(currentJson));
+          
+          // 更新新的 JSON 副本
+          const path = new JSONHeroPath(nodeId);
+          path.set(updated, validation.value);
+          
+          resolve(updated);
+          return updated;
         });
-        
-        // 返回新的 JSON 对象
-        return newJson;
       });
+      
+      // 保存到 IndexedDB
+      await updateDocument(doc.id, undefined, JSON.stringify(newJson, null, 2));
       
       setIsEditing(false);
       setEditValue("");
@@ -146,8 +144,10 @@ export function useNodeEdit(nodeId: string) {
     } catch (e) {
       console.error("Save edit error:", e);
       setHasError(true);
+    } finally {
+      setIsSaving(false);
     }
-  }, [editValue, nodeId, doc.id, updateDoc, setJson, validateAndConvertValue]);
+  }, [editValue, nodeId, doc.id, setJson, validateAndConvertValue]);
 
   // 处理键盘事件
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -172,7 +172,6 @@ export function useNodeEdit(nodeId: string) {
 
   const isReadOnly = doc.readOnly || doc.type !== "raw";
   const canEdit = !isReadOnly && getCurrentValue() !== undefined;
-  const isSaving = updateDoc.state !== "idle";
 
   return {
     isEditing,

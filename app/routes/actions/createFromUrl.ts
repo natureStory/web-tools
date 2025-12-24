@@ -1,7 +1,7 @@
 import { redirect } from "remix";
 import type { ActionFunction, LoaderFunction } from "remix";
 import invariant from "tiny-invariant";
-import { createFromUrl, createFromUrlOrRawJson } from "~/jsonDoc.server";
+import { createFromUrl, createFromUrlOrRawJson } from "~/jsonDoc.client";
 import { sendEvent } from "~/graphJSON.server";
 import {
   commitSession,

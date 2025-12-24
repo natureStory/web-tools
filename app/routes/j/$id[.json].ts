@@ -1,6 +1,6 @@
 import { json, LoaderFunction } from "remix";
 import invariant from "tiny-invariant";
-import { getDocument } from "~/jsonDoc.server";
+import { getDocument } from "~/jsonDoc.client";
 
 export const loader: LoaderFunction = async ({ params, request }) => {
   invariant(params.id, "expected params.id");

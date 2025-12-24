@@ -9,9 +9,9 @@ import { ViewUpdate } from "@uiw/react-codemirror";
 import jsonMap from "json-source-map";
 import { JSONHeroPath } from "@jsonhero/path";
 import {usePreferences} from '~/components/PreferencesProvider'
-import { useFetcher } from "remix";
 import { useJsonDoc } from "~/hooks/useJsonDoc";
 import { match } from "ts-pattern";
+import { updateDocument } from "~/jsonDoc.client";
 
 export function JsonEditor() {
   const [json, setJson] = useJson();
@@ -19,7 +19,7 @@ export function JsonEditor() {
   const { selectedNodeId } = useJsonColumnViewState();
   const { goToNodeId } = useJsonColumnViewAPI();
   const [preferences] = usePreferences();
-  const updateDoc = useFetcher();
+  const [isSavingState, setIsSavingState] = useState(false);
 
   const jsonMapped = useMemo(() => {
     return jsonMap.stringify(json, null, preferences?.indent || 2);
@@ -27,35 +27,11 @@ export function JsonEditor() {
 
   const [editedContent, setEditedContent] = useState(jsonMapped.json);
   const [hasError, setHasError] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  // 记录上次提交的内容，用于判断是否刚提交完成
-  const lastSubmittedContent = useRef<string | null>(null);
 
   useEffect(() => {
     setEditedContent(jsonMapped.json);
     setHasError(false);
-    // 当内容同步完成后，清除同步状态和提交记录
-    if (isSyncing) {
-      setIsSyncing(false);
-      lastSubmittedContent.current = null;
-    }
   }, [jsonMapped.json]);
-
-  useEffect(() => {
-    if (updateDoc.type === "done" && updateDoc.data && !updateDoc.data.error) {
-      // 标记正在同步数据
-      setIsSyncing(true);
-      // 更新成功，更新本地 JSON
-      if (doc.type === "raw" && updateDoc.data.contents) {
-        try {
-          const newJson = JSON.parse(updateDoc.data.contents);
-          setJson(newJson);
-        } catch (e) {
-          // ignore
-        }
-      }
-    }
-  }, [updateDoc, doc.type, setJson]);
 
   const selection = useMemo<{ start: number; end: number } | undefined>(() => {
     if (!selectedNodeId) {
@@ -127,22 +103,30 @@ export function JsonEditor() {
     }
   }, []);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (hasError) {
       return;
     }
 
-    // 记录本次提交的内容
-    lastSubmittedContent.current = editedContent;
-
-    const formData = new FormData();
-    formData.append("contents", editedContent);
-
-    updateDoc.submit(formData, {
-      method: "post",
-      action: `/actions/${doc.id}/update`,
-    });
-  }, [editedContent, hasError, doc.id, updateDoc]);
+    setIsSavingState(true);
+    try {
+      // 保存到 IndexedDB
+      await updateDocument(doc.id, undefined, editedContent);
+      
+      // 更新本地 JSON 状态
+      try {
+        const newJson = JSON.parse(editedContent);
+        setJson(newJson);
+      } catch (e) {
+        console.error("Failed to parse JSON:", e);
+      }
+    } catch (error) {
+      console.error("Failed to save document:", error);
+      alert("保存失败");
+    } finally {
+      setIsSavingState(false);
+    }
+  }, [editedContent, hasError, doc.id, setJson]);
 
   const handleReset = useCallback(() => {
     setEditedContent(jsonMapped.json);
@@ -151,15 +135,7 @@ export function JsonEditor() {
 
   const isChanged = editedContent !== jsonMapped.json;
   const isReadOnly = doc.readOnly || doc.type !== "raw";
-  // 检查是否正在保存：
-  // 1. state 不是 idle（正在提交）
-  // 2. isSyncing（正在同步数据）
-  // 3. 刚保存完成还未同步（type 是 done 且服务器返回的内容是上次提交的内容）
-  const isSaving = 
-    updateDoc.state !== "idle" || 
-    isSyncing || 
-    (updateDoc.type === "done" && lastSubmittedContent.current !== null && 
-     updateDoc.data?.contents === lastSubmittedContent.current);
+  const isSaving = isSavingState;
 
   return (
     <div className="flex flex-col h-full">

@@ -5,7 +5,7 @@ import {
   createFromRawJson,
   createFromUrl,
   CreateJsonOptions,
-} from "~/jsonDoc.server";
+} from "~/jsonDoc.client";
 
 export let loader: LoaderFunction = async ({ request, context }) => {
   const url = new URL(request.url);

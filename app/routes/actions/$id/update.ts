@@ -1,7 +1,7 @@
 import { ActionFunction, json } from "remix";
 import invariant from "tiny-invariant";
 import { sendEvent } from "~/graphJSON.server";
-import { updateDocument } from "~/jsonDoc.server";
+import { updateDocument } from "~/jsonDoc.client";
 
 export const action: ActionFunction = async ({ params, request, context }) => {
   invariant(params.id, "expected params.id");

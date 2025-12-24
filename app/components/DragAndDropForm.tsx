@@ -1,22 +1,14 @@
 import { ArrowCircleDownIcon } from "@heroicons/react/outline";
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Form, useSubmit } from "remix";
-import invariant from "tiny-invariant";
+import { useNavigate } from "remix";
+import { createFromRawJson } from "~/jsonDoc.client";
 
 export function DragAndDropForm() {
-  const formRef = useRef<HTMLFormElement>(null);
-  const filenameInputRef = useRef<HTMLInputElement>(null);
-  const rawJsonInputRef = useRef<HTMLInputElement>(null);
-
-  const submit = useSubmit();
+  const navigate = useNavigate();
 
   const onDrop = useCallback(
-    (acceptedFiles: Array<File>) => {
-      if (!formRef.current || !filenameInputRef.current) {
-        return;
-      }
-
+    async (acceptedFiles: Array<File>) => {
       if (acceptedFiles.length === 0) {
         return;
       }
@@ -27,7 +19,7 @@ export function DragAndDropForm() {
 
       reader.onabort = () => console.log("file reading was aborted");
       reader.onerror = () => console.log("file reading has failed");
-      reader.onload = () => {
+      reader.onload = async () => {
         if (reader.result == null) {
           return;
         }
@@ -41,17 +33,22 @@ export function DragAndDropForm() {
           jsonValue = decoder.decode(reader.result);
         }
 
-        invariant(rawJsonInputRef.current, "rawJsonInputRef is null");
-        invariant(jsonValue, "jsonValue is undefined");
+        if (!jsonValue) {
+          alert("无法读取文件内容");
+          return;
+        }
 
-        rawJsonInputRef.current.value = jsonValue;
-
-        submit(formRef.current);
+        try {
+          const doc = await createFromRawJson(firstFile.name, jsonValue);
+          navigate(`/j/${doc.id}`);
+        } catch (error) {
+          console.error("创建文档出错:", error);
+          alert(error instanceof Error ? error.message : "创建文档失败");
+        }
       };
       reader.readAsArrayBuffer(firstFile);
-      filenameInputRef.current.value = firstFile.name;
     },
-    [formRef.current, filenameInputRef.current, rawJsonInputRef.current]
+    [navigate]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -63,28 +60,23 @@ export function DragAndDropForm() {
   });
 
   return (
-    <Form method="post" action="/actions/createFromFile" ref={formRef}>
-      <div
-        {...getRootProps()}
-        className="block min-w-[300px] cursor-pointer rounded-md border-2 border-dashed border-slate-600 bg-slate-900/40 p-4 text-base text-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-      >
-        <input {...getInputProps()} />
-        <div className="flex items-center">
-          <ArrowCircleDownIcon
-            className={`mr-3 inline h-6 w-6 ${
-              isDragActive ? "text-lime-500" : ""
-            }`}
-          />
-          <p className={`${isDragActive ? "text-lime-500" : ""}`}>
-            {isDragActive
-              ? "现在拖拽打开它…"
-              : "拖拽 JSON 文件到这里, 或点击选择"}
-          </p>
-        </div>
-
-        <input type="hidden" name="filename" ref={filenameInputRef} />
-        <input type="hidden" name="rawJson" ref={rawJsonInputRef} />
+    <div
+      {...getRootProps()}
+      className="block min-w-[300px] cursor-pointer rounded-md border-2 border-dashed border-slate-600 bg-slate-900/40 p-4 text-base text-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+    >
+      <input {...getInputProps()} />
+      <div className="flex items-center">
+        <ArrowCircleDownIcon
+          className={`mr-3 inline h-6 w-6 ${
+            isDragActive ? "text-lime-500" : ""
+          }`}
+        />
+        <p className={`${isDragActive ? "text-lime-500" : ""}`}>
+          {isDragActive
+            ? "现在拖拽打开它…"
+            : "拖拽 JSON 文件到这里, 或点击选择"}
+        </p>
       </div>
-    </Form>
+    </div>
   );
 }

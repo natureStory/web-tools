@@ -1,5 +1,4 @@
-import { useMemo, useCallback } from "react";
-import { useFetcher } from "remix";
+import { useMemo, useCallback, useState } from "react";
 import { useJson } from "./useJson";
 import { useJsonDoc } from "./useJsonDoc";
 import {
@@ -8,11 +7,12 @@ import {
   deduplicateAllStrings,
   DuplicateStringInfo,
 } from "~/utilities/deduplicateJsonStrings";
+import { updateDocument } from "~/jsonDoc.client";
 
 export function useJsonDeduplicate() {
   const [json, setJson] = useJson();
   const { doc } = useJsonDoc();
-  const updateDoc = useFetcher();
+  const [isSaving, setIsSaving] = useState(false);
 
   // 查找所有重复字符串
   const duplicates = useMemo(() => {
@@ -21,43 +21,44 @@ export function useJsonDeduplicate() {
 
   // 为特定字符串去重
   const deduplicateSingle = useCallback(
-    (targetValue: string) => {
+    async (targetValue: string) => {
       const newJson = deduplicateString(json, targetValue);
 
       // 更新本地状态
       setJson(newJson);
 
-      // 提交到服务器
-      const formData = new FormData();
-      formData.append("contents", JSON.stringify(newJson, null, 2));
-
-      updateDoc.submit(formData, {
-        method: "post",
-        action: `/actions/${doc.id}/update`,
-      });
+      // 保存到 IndexedDB
+      setIsSaving(true);
+      try {
+        await updateDocument(doc.id, undefined, JSON.stringify(newJson, null, 2));
+      } catch (error) {
+        console.error("Failed to update document:", error);
+      } finally {
+        setIsSaving(false);
+      }
     },
-    [json, doc.id, updateDoc, setJson]
+    [json, doc.id, setJson]
   );
 
   // 为所有重复字符串去重
-  const deduplicateAll = useCallback(() => {
+  const deduplicateAll = useCallback(async () => {
     const newJson = deduplicateAllStrings(json);
 
     // 更新本地状态
     setJson(newJson);
 
-    // 提交到服务器
-    const formData = new FormData();
-    formData.append("contents", JSON.stringify(newJson, null, 2));
-
-    updateDoc.submit(formData, {
-      method: "post",
-      action: `/actions/${doc.id}/update`,
-    });
-  }, [json, doc.id, updateDoc, setJson]);
+    // 保存到 IndexedDB
+    setIsSaving(true);
+    try {
+      await updateDocument(doc.id, undefined, JSON.stringify(newJson, null, 2));
+    } catch (error) {
+      console.error("Failed to update document:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [json, doc.id, setJson]);
 
   const isReadOnly = doc.readOnly || doc.type !== "raw";
-  const isSaving = updateDoc.state !== "idle";
 
   return {
     duplicates,

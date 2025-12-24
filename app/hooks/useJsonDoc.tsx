@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext } from "react";
 import invariant from "tiny-invariant";
-import { JSONDocument } from "~/jsonDoc.server";
+import { JSONDocument } from "~/jsonDoc.client";
 
 type JsonDocType = {
   doc: JSONDocument;

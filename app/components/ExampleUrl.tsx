@@ -1,4 +1,5 @@
-import { Form } from "remix";
+import { useNavigate } from "remix";
+import { createFromUrl } from "~/jsonDoc.client";
 
 export function ExampleUrl({
   url,
@@ -9,20 +10,24 @@ export function ExampleUrl({
   title: string;
   displayTitle?: string;
 }) {
+  const navigate = useNavigate();
+
+  const handleClick = async () => {
+    try {
+      const doc = await createFromUrl(new URL(url), title);
+      navigate(`/j/${doc.id}`);
+    } catch (error) {
+      console.error("创建文档出错:", error);
+      alert("创建文档失败");
+    }
+  };
+
   return (
-    <Form
-      method="post"
-      action="/actions/createFromUrl?utm_source=example_url"
-      reloadDocument
+    <button
+      onClick={handleClick}
+      className="bg-slate-900 px-4 py-2 rounded-md whitespace-nowrap text-lime-300 transition hover:text-lime-500"
     >
-      <input type="hidden" name="jsonUrl" value={url} />
-      <input type="hidden" name="title" value={title} />
-      <button
-        type="submit"
-        className="bg-slate-900 px-4 py-2 rounded-md whitespace-nowrap text-lime-300 transition hover:text-lime-500"
-      >
-        {displayTitle ?? title}
-      </button>
-    </Form>
+      {displayTitle ?? title}
+    </button>
   );
 }

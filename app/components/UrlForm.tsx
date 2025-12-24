@@ -1,21 +1,43 @@
 import { useState } from "react";
-import { Form, useTransition } from "remix";
+import { useNavigate } from "remix";
+import { createFromUrlOrRawJson } from "~/jsonDoc.client";
 
 export type UrlFormProps = {
   className?: string;
 };
 
 export function UrlForm({ className }: UrlFormProps) {
-  const transition = useTransition();
+  const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isNotIdle = transition.state !== "idle";
-  const isButtonDisabled = !inputValue.length || isNotIdle;
+  const isButtonDisabled = !inputValue.length || isSubmitting;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!inputValue) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const doc = await createFromUrlOrRawJson(inputValue);
+      if (doc) {
+        navigate(`/j/${doc.id}`);
+      } else {
+        alert("创建文档失败，请检查输入的内容");
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      console.error("创建文档出错:", error);
+      alert(error instanceof Error ? error.message : "创建文档失败");
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <Form
-      method="post"
-      action="/actions/createFromUrl"
+    <form
+      onSubmit={handleSubmit}
       className={`${className}`}
     >
       <div className="flex">
@@ -36,9 +58,9 @@ export function UrlForm({ className }: UrlFormProps) {
           }`}
           disabled={isButtonDisabled}
         >
-          {isNotIdle ? "..." : "提交"}
+          {isSubmitting ? "..." : "提交"}
         </button>
       </div>
-    </Form>
+    </form>
   );
 }

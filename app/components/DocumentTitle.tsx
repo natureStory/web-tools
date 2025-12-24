@@ -1,20 +1,34 @@
 import { PencilAltIcon } from "@heroicons/react/outline";
-import { useEffect, useRef, useState } from "react";
-import { useFetcher } from "remix";
+import { useRef, useState } from "react";
 import { match } from "ts-pattern";
 import { useJsonDoc } from "~/hooks/useJsonDoc";
+import { updateDocument } from "~/jsonDoc.client";
 
 export function DocumentTitle() {
   const { doc } = useJsonDoc();
   const [editedTitle, setEditedTitle] = useState(doc.title);
-  const updateDoc = useFetcher();
+  const [isSaving, setIsSaving] = useState(false);
   const ref = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    if (updateDoc.type === "done" && updateDoc.data.title) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (editedTitle === doc.title || !editedTitle) return;
+    
+    setIsSaving(true);
+    
+    try {
+      await updateDocument(doc.id, editedTitle);
       ref.current?.blur();
+      // 更新成功后，需要重新加载页面以获取最新数据
+      window.location.reload();
+    } catch (error) {
+      console.error("更新标题出错:", error);
+      alert(error instanceof Error ? error.message : "更新失败");
+    } finally {
+      setIsSaving(false);
     }
-  }, [updateDoc]);
+  };
 
   if (doc.readOnly) {
     return (
@@ -33,7 +47,7 @@ export function DocumentTitle() {
     );
   } else {
     return (
-      <updateDoc.Form method="post" action={`/actions/${doc.id}/update`}>
+      <form onSubmit={handleSubmit}>
         <div
           className="flex justify-center items-center w-full"
           title={doc.title}
@@ -51,6 +65,7 @@ export function DocumentTitle() {
               placeholder="Name your JSON file"
               value={editedTitle}
               onChange={(e) => setEditedTitle(e.target.value)}
+              disabled={isSaving}
             />
           </label>
 
@@ -60,6 +75,7 @@ export function DocumentTitle() {
             ))
             .with("", () => (
               <button
+                type="button"
                 className="ml-2 text-lime-500 hover:text-lime-600 transition"
                 onClick={() => setEditedTitle(doc.title)}
               >
@@ -70,12 +86,13 @@ export function DocumentTitle() {
               <button
                 type="submit"
                 className="ml-2 text-lime-500 hover:text-lime-600 transition"
+                disabled={isSaving}
               >
-                Save
+                {isSaving ? "..." : "Save"}
               </button>
             ))}
         </div>
-      </updateDoc.Form>
+      </form>
     );
   }
 }

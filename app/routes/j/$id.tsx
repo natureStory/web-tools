@@ -1,17 +1,16 @@
 import {
-  ActionFunction,
   LoaderFunction,
   MetaFunction,
   Outlet,
-  redirect, ThrownResponse, useCatch,
+  useCatch,
   useLoaderData,
   useLocation,
   useParams,
 } from "remix";
 import invariant from "tiny-invariant";
-import { deleteDocument, getDocument, JSONDocument } from "~/jsonDoc.server";
+import { getDocument, JSONDocument } from "~/jsonDoc.client";
 import { JsonDocProvider } from "~/hooks/useJsonDoc";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { JsonProvider } from "~/hooks/useJson";
 import { Footer } from "~/components/Footer";
 import { Header } from "~/components/Header";
@@ -30,97 +29,23 @@ import { Body } from "~/components/Primitives/Body";
 import { PageNotFoundTitle } from "~/components/Primitives/PageNotFoundTitle";
 import { SmallSubtitle } from "~/components/Primitives/SmallSubtitle";
 import { Logo } from "~/components/Icons/Logo";
-import {
-  commitSession,
-  getSession,
-  setErrorMessage,
-  setSuccessMessage,
-} from "~/services/toast.server";
 import { getRandomUserAgent } from '~/utilities/getRandomUserAgent'
 
 export const loader: LoaderFunction = async ({ params, request }) => {
   invariant(params.id, "expected params.id");
 
-  const doc = await getDocument(params.id);
-
-  if (!doc) {
-    throw new Response("Not Found", {
-      status: 404,
-    });
-  }
-
   const path = getPathFromRequest(request);
   const minimal = getMinimalFromRequest(request);
 
-  if (doc.type == "url") {
-    console.log(`Fetching ${doc.url}...`);
-
-    const jsonResponse = await safeFetch(doc.url, {
-      headers: {
-        "User-Agent": getRandomUserAgent(),
-      },
-    });
-
-    if (!jsonResponse.ok) {
-      const jsonResponseText = await jsonResponse.text();
-      const error = `Failed to fetch ${doc.url}. HTTP status: ${jsonResponse.status} (${jsonResponseText}})`;
-      console.error(error);
-
-      throw new Response(error, {
-        status: jsonResponse.status,
-      });
-    }
-
-    const json = await jsonResponse.json();
-
-    return {
-      doc,
-      json,
-      path,
-      minimal,
-    };
-  } else {
-    return {
-      doc,
-      json: JSON.parse(doc.contents),
-      path,
-      minimal,
-    };
-  }
+  // 返回基本信息，实际数据在客户端加载
+  return {
+    docId: params.id,
+    path,
+    minimal,
+  };
 };
 
-export const action: ActionFunction = async ({ request, params }) => {
-  // Return if the request is not a DELETE
-  if (request.method !== "DELETE") {
-    return;
-  }
-
-  invariant(params.id, "expected params.id");
-
-  const toastCookie = await getSession(request.headers.get("cookie"));
-
-  const document = await getDocument(params.id);
-
-  if (!document) {
-    setErrorMessage(toastCookie, "Document not found", "Error");
-
-    return redirect(`/`);
-  }
-
-  if (document.readOnly) {
-    setErrorMessage(toastCookie, "Document is read-only", "Error");
-
-    return redirect(`/j/${params.id}`);
-  }
-
-  await deleteDocument(params.id);
-
-  setSuccessMessage(toastCookie, "Document deleted successfully", "Success");
-
-  return redirect("/", {
-    headers: { "Set-Cookie": await commitSession(toastCookie) },
-  });
-};
+// Action 已移除 - 删除操作现在在客户端处理
 
 function getPathFromRequest(request: Request): string | null {
   const url = new URL(request.url);
@@ -151,10 +76,14 @@ function getMinimalFromRequest(request: Request): boolean | undefined {
 }
 
 type LoaderData = {
-  doc: JSONDocument;
-  json: unknown;
+  docId: string;
   path?: string;
   minimal?: boolean;
+};
+
+type ClientData = {
+  doc: JSONDocument;
+  json: unknown;
 };
 
 export const meta: MetaFunction = ({
@@ -163,10 +92,6 @@ export const meta: MetaFunction = ({
   data: LoaderData | undefined;
 }) => {
   let title = "JSON Hero";
-
-  if (data?.doc?.title) {
-    title += ` - ${data.doc.title}`;
-  }
 
   return {
     title,
@@ -177,9 +102,51 @@ export const meta: MetaFunction = ({
 
 export default function JsonDocumentRoute() {
   const loaderData = useLoaderData<LoaderData>();
-
-  // Redirect back to `/j/${slug}` if the path is set, that way refreshing the page doesn't go to the path in the url.
   const location = useLocation();
+  const [clientData, setClientData] = useState<ClientData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadDocument() {
+      try {
+        const doc = await getDocument(loaderData.docId);
+
+        if (!doc) {
+          setError("文档不存在");
+          return;
+        }
+
+        if (doc.type === "url") {
+          console.log(`Fetching ${doc.url}...`);
+
+          const jsonResponse = await safeFetch(doc.url, {
+            headers: {
+              "User-Agent": getRandomUserAgent(),
+            },
+          });
+
+          if (!jsonResponse.ok) {
+            const jsonResponseText = await jsonResponse.text();
+            setError(`Failed to fetch ${doc.url}. HTTP status: ${jsonResponse.status} (${jsonResponseText}})`);
+            return;
+          }
+
+          const json = await jsonResponse.json();
+          setClientData({ doc, json });
+        } else {
+          setClientData({
+            doc,
+            json: JSON.parse(doc.contents),
+          });
+        }
+      } catch (err) {
+        console.error("加载文档出错:", err);
+        setError(err instanceof Error ? err.message : "加载文档失败");
+      }
+    }
+
+    loadDocument();
+  }, [loaderData.docId]);
 
   useEffect(() => {
     if (loaderData.path) {
@@ -187,14 +154,26 @@ export default function JsonDocumentRoute() {
     }
   }, [loaderData.path]);
 
+  if (error) {
+    throw new Response(error, { status: 404 });
+  }
+
+  if (!clientData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-white text-xl">加载中...</div>
+      </div>
+    );
+  }
+
   return (
     <JsonDocProvider
-      doc={loaderData.doc}
+      doc={clientData.doc}
       path={loaderData.path}
-      key={loaderData.doc.id}
+      key={clientData.doc.id}
       minimal={loaderData.minimal}
     >
-      <JsonProvider initialJson={loaderData.json}>
+      <JsonProvider initialJson={clientData.json}>
         <JsonSchemaProvider>
           <JsonColumnViewProvider>
             <JsonSearchProvider>

@@ -1,7 +1,7 @@
 import { ActionFunction, redirect } from "remix";
 import invariant from "tiny-invariant";
 import { sendEvent } from "~/graphJSON.server";
-import { createFromRawJson } from "~/jsonDoc.server";
+import { createFromRawJson } from "~/jsonDoc.client";
 
 type CreateFromFileError = {
   filename?: boolean;

@@ -2,7 +2,7 @@ import {
   createFromRawJson,
   CreateJsonOptions,
   JSONDocument,
-} from "~/jsonDoc.server";
+} from "~/jsonDoc.client";
 import convertFromRawXml from "./convertFromRawXml";
 
 export default async function createFromRawXml(

@@ -1,19 +1,26 @@
 import { useState } from "react";
+import { useNavigate } from "remix";
 import { CodeViewer } from "~/components/CodeViewer";
 import { CopyTextButton } from "~/components/CopyTextButton";
-import { OpenInNewWindow } from "~/components/OpenInWindow";
 import { Body } from "~/components/Primitives/Body";
 import { PreviewBox } from "../PreviewBox";
 import { PreviewJson } from "./preview.types";
+import { createFromUrl } from "~/jsonDoc.client";
 
 export function PreviewJson({ preview }: { preview: PreviewJson }) {
   const [hovering, setHovering] = useState(false);
-  const jsonHeroUrl = new URL(
-    `/actions/createFromUrl?jsonUrl=${encodeURIComponent(preview.url)}`,
-    window.location.origin
-  );
+  const navigate = useNavigate();
 
-  jsonHeroUrl.searchParams.append("utm_source", "preview");
+  const handleOpenInTab = async () => {
+    try {
+      const doc = await createFromUrl(new URL(preview.url));
+      // 在新标签页打开
+      window.open(`/j/${doc.id}`, '_blank');
+    } catch (error) {
+      console.error("创建文档出错:", error);
+      alert("创建文档失败");
+    }
+  };
 
   const code = JSON.stringify(preview.json, null, 2);
 
@@ -34,12 +41,12 @@ export function PreviewJson({ preview }: { preview: PreviewJson }) {
             value={code}
             className="bg-slate-200 hover:bg-slate-300 h-fit mr-1 px-2 py-0.5 rounded-sm transition dark:text-white dark:bg-slate-700 dark:hover:bg-slate-600"
           ></CopyTextButton>
-          <OpenInNewWindow
-            url={jsonHeroUrl.href}
+          <button
+            onClick={handleOpenInTab}
             className="bg-slate-200 hover:bg-slate-300 h-fit px-2 py-0.5 rounded-sm transition dark:text-white dark:bg-slate-700 dark:hover:bg-slate-600"
           >
             <Body>Open in tab</Body>
-          </OpenInNewWindow>
+          </button>
         </div>
       </div>
     </PreviewBox>
