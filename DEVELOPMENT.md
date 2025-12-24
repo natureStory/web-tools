@@ -80,4 +80,10 @@ We currently use [OpenGraph Ninja](https://opengraph.ninja/) to power some of th
 
 ### Deploying to Cloudflare
 
+#### 登录信息
+
+Cloudflare 账号使用 GitHub 登录。
+
+#### 部署步骤
+
 _Coming Soon_
