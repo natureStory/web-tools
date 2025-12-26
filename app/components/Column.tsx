@@ -40,4 +40,4 @@ function ColumnElement(column: ColumnProps) {
   );
 }
 
-export const Column = memo(ColumnElement);
+export const Column = ColumnElement;

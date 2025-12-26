@@ -83,10 +83,6 @@ export function useColumnView({
 }: ColumnViewOptions): ColumnViewInstance {
   const columnCache = React.useRef<ColumnDefinitionCache>(new Map());
 
-  useEffect(() => {
-    columnCache.current = new Map();
-  }, [rootNode]);
-
   const nodeTable = useMemo<NodeTable>(
     () => generateNodeTable(rootNode),
     [rootNode]
@@ -191,10 +187,14 @@ export function useColumnView({
   const highlightedPath = getPathToNode(nodeTable, highlightedNodeId);
 
   // 使用 useMemo 替代 useMemoCompare，确保 nodeTable 变化时重新生成列
-  const columns = useMemo(
-    () => generateColumns(nodeTable, selectedPath, columnCache.current),
-    [nodeTable, selectedPath]
-  );
+  // 添加 rootNode 作为依赖，确保 rootNode 更新时缓存被清空后重新生成列
+  const columns = useMemo(() => {
+    // 如果 rootNode 变化，清空缓存
+    if (rootNode) {
+      columnCache.current = new Map();
+    }
+    return generateColumns(nodeTable, selectedPath, columnCache.current);
+  }, [rootNode, nodeTable, selectedPath]);
   const selectedNodes = selectedPath.map((id) => nodeTable[id].node);
 
   const getColumnViewProps = useCallback(() => {

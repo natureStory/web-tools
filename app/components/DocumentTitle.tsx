@@ -1,5 +1,5 @@
 import { PencilAltIcon } from "@heroicons/react/outline";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { match } from "ts-pattern";
 import { useJsonDoc } from "~/hooks/useJsonDoc";
 import { updateDocument } from "~/jsonDoc.client";
@@ -7,24 +7,33 @@ import { updateDocument } from "~/jsonDoc.client";
 export function DocumentTitle() {
   const { doc } = useJsonDoc();
   const [editedTitle, setEditedTitle] = useState(doc.title);
+  const [savedTitle, setSavedTitle] = useState(doc.title);
   const [isSaving, setIsSaving] = useState(false);
   const ref = useRef<HTMLInputElement | null>(null);
+
+  // 同步 doc.title 到 editedTitle 和 savedTitle
+  useEffect(() => {
+    setEditedTitle(doc.title);
+    setSavedTitle(doc.title);
+  }, [doc.title]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editedTitle === doc.title || !editedTitle) return;
+    if (editedTitle === savedTitle || !editedTitle) return;
     
     setIsSaving(true);
     
     try {
       await updateDocument(doc.id, editedTitle);
       ref.current?.blur();
-      // 更新成功后，需要重新加载页面以获取最新数据
-      window.location.reload();
+      // 标题更新成功，更新 savedTitle 以反映最新保存的标题
+      setSavedTitle(editedTitle);
     } catch (error) {
       console.error("更新标题出错:", error);
       alert(error instanceof Error ? error.message : "更新失败");
+      // 失败时还原标题
+      setEditedTitle(savedTitle);
     } finally {
       setIsSaving(false);
     }
@@ -70,14 +79,14 @@ export function DocumentTitle() {
           </label>
 
           {match(editedTitle)
-            .with(doc.title, () => (
+            .with(savedTitle, () => (
               <p className="ml-2 text-transparent">Save</p>
             ))
             .with("", () => (
               <button
                 type="button"
                 className="ml-2 text-lime-500 hover:text-lime-600 transition"
-                onClick={() => setEditedTitle(doc.title)}
+                onClick={() => setEditedTitle(savedTitle)}
               >
                 Reset
               </button>

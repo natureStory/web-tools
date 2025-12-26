@@ -5,6 +5,9 @@ import { ColumnViewNode } from "~/useColumnView";
 import { colorForItemAtPath } from "~/utilities/colors";
 import { Body } from "./Primitives/Body";
 import { useNodeEdit } from "~/hooks/useNodeEdit";
+import { JSONHeroPath } from "@jsonhero/path";
+import { inferType } from "@jsonhero/json-infer-types";
+import { formatValue } from "~/utilities/formatter";
 
 export type ColumnItemProps = {
   item: ColumnViewNode;
@@ -54,6 +57,18 @@ function ColumnItemElement({
     () => colorForItemAtPath(item.id, json),
     [item.id, json]
   );
+
+  // 动态计算 subtitle，确保显示最新的值
+  const subtitle = useMemo<string | undefined>(() => {
+    try {
+      const path = new JSONHeroPath(item.id);
+      const value = path.first(json);
+      const info = inferType(value);
+      return formatValue(info);
+    } catch (e) {
+      return item.subtitle;
+    }
+  }, [item.id, item.subtitle, json]);
 
   useEffect(() => {
     if (isSelected || isHighlighted) {
@@ -116,7 +131,7 @@ function ColumnItemElement({
           </div>
         ) : (
           <>
-            {item.subtitle && (
+            {subtitle && (
               <Mono
                 className={`truncate pr-1 transition duration-75 ${
                   isHighlighted
@@ -124,7 +139,7 @@ function ColumnItemElement({
                     : "text-gray-400 dark:text-gray-500"
                 }`}
               >
-                {item.subtitle}
+                {subtitle}
               </Mono>
             )}
             {canEdit && isHighlighted && !showArrow && (
@@ -153,4 +168,4 @@ function ColumnItemElement({
   );
 }
 
-export const ColumnItem = memo(ColumnItemElement);
+export const ColumnItem = ColumnItemElement;

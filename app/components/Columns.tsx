@@ -10,7 +10,7 @@ import { BlankColumn } from "./BlankColumn";
 import { Column } from "./Column";
 import { ColumnItem } from "./ColumnItem";
 
-function ColumnsElement({ columns }: { columns: ColumnDefinition[] }) {
+export function Columns({ columns }: { columns: ColumnDefinition[] }) {
   const [json] = useJson();
   const { selectedPath, highlightedPath, highlightedNodeId } =
     useJsonColumnViewState();
@@ -58,4 +58,3 @@ function ColumnsElement({ columns }: { columns: ColumnDefinition[] }) {
     </div>
   );
 }
-export const Columns = memo(ColumnsElement);
