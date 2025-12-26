@@ -1,5 +1,6 @@
 import { TemplateIcon, CodeIcon, DownloadIcon } from "@heroicons/react/outline";
 import { TreeIcon } from "~/components/Icons/TreeIcon";
+import { InterfaceIcon } from "~/components/Icons/InterfaceIcon";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Link, useLocation, useNavigate } from "remix";
 import { useJsonDoc } from "~/hooks/useJsonDoc";
@@ -49,6 +50,18 @@ export function SideBar() {
             </ShortcutIcon>
           </ToolTip>
           <TreeIcon className="p-2 w-full h-full" />
+        </SidebarLink>
+        <SidebarLink to={`/j/${doc.id}/interface`} hotKey="option+4,alt+4">
+          <ToolTip arrow="left">
+            <Body>Interface 视图</Body>
+            <ShortcutIcon className="w-[26px] h-[26px] ml-1 text-slate-700 bg-slate-200 dark:text-slate-300 dark:bg-slate-800">
+              ⌥
+            </ShortcutIcon>
+            <ShortcutIcon className="w-[26px] h-[26px] ml-1 text-slate-700 bg-slate-200 dark:text-slate-300 dark:bg-slate-800">
+              4
+            </ShortcutIcon>
+          </ToolTip>
+          <InterfaceIcon className="p-2 w-full h-full" />
         </SidebarLink>
       </ol>
       <ol>

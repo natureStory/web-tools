@@ -1,4 +1,5 @@
 import { json as jsonLang } from "@codemirror/lang-json";
+import { javascript } from "@codemirror/lang-javascript";
 import { useCodeMirror } from "@uiw/react-codemirror";
 import { useRef, useEffect } from "react";
 import { getViewerSetup } from "~/utilities/codeMirrorSetup";
@@ -6,13 +7,15 @@ import { darkTheme, lightTheme } from "~/utilities/codeMirrorTheme";
 import { useTheme } from "./ThemeProvider";
 import { useHotkeys } from "react-hotkeys-hook";
 
-export function CodeViewer({ code, lang }: { code: string; lang?: "json" }) {
+export function CodeViewer({ code, lang }: { code: string; lang?: "json" | "typescript" }) {
   const editor = useRef(null);
 
   const extensions = getViewerSetup();
 
   if (!lang || lang === "json") {
     extensions.push(jsonLang());
+  } else if (lang === "typescript") {
+    extensions.push(javascript({ typescript: true }));
   }
 
   const [theme] = useTheme();
