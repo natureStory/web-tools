@@ -71,7 +71,7 @@ export function DocumentTitle() {
               type="text"
               name="title"
               spellCheck="false"
-              placeholder="Name your JSON file"
+              placeholder="重命名你的 JSON 文件"
               value={editedTitle}
               onChange={(e) => setEditedTitle(e.target.value)}
               disabled={isSaving}
@@ -80,7 +80,7 @@ export function DocumentTitle() {
 
           {match(editedTitle)
             .with(savedTitle, () => (
-              <p className="ml-2 text-transparent">Save</p>
+              <p className="ml-2 text-transparent">保存</p>
             ))
             .with("", () => (
               <button
@@ -88,7 +88,7 @@ export function DocumentTitle() {
                 className="ml-2 text-lime-500 hover:text-lime-600 transition"
                 onClick={() => setEditedTitle(savedTitle)}
               >
-                Reset
+                重置
               </button>
             ))
             .otherwise(() => (
@@ -97,7 +97,7 @@ export function DocumentTitle() {
                 className="ml-2 text-lime-500 hover:text-lime-600 transition"
                 disabled={isSaving}
               >
-                {isSaving ? "..." : "Save"}
+                {isSaving ? "..." : "保存"}
               </button>
             ))}
         </div>
