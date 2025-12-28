@@ -69,7 +69,7 @@ function PropertiesTimestamp({
     },
     {
       key: "date",
-      value: date.toDateString(),
+      value: date.toLocaleDateString(),
     },
     {
       key: "time",

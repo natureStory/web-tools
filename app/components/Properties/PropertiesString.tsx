@@ -102,7 +102,7 @@ function PropertiesTimestamp({
     },
     {
       key: "date",
-      value: date.toDateString(),
+      value: date.toLocaleDateString(),
     },
     {
       key: "time",
@@ -169,7 +169,7 @@ function PropertiesDateTime({
 
   properties.push({
     key: "date",
-    value: temporal.toLocaleString("en-US", {
+    value: temporal.toLocaleString("zh-CN", {
       year: "numeric",
       month: "long",
       day: "numeric",

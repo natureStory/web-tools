@@ -119,7 +119,7 @@ export function formatDateTime(
 
   switch (format.parts) {
     case "datetime":
-      return temporal.toLocaleString("en-US", {
+      return temporal.toLocaleString("zh-CN", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -129,13 +129,13 @@ export function formatDateTime(
         timeZoneName: "short",
       });
     case "date":
-      return temporal.toLocaleString("en-US", {
+      return temporal.toLocaleString("zh-CN", {
         year: "numeric",
         month: "short",
         day: "numeric",
       });
     case "time":
-      return temporal.toLocaleString("en-US", {
+      return temporal.toLocaleString("zh-CN", {
         hour: "numeric",
         minute: "numeric",
         second: "numeric",
