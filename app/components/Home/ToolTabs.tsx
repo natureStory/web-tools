@@ -1,4 +1,5 @@
-import { useState, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
+import { useSearchParams } from "@remix-run/react";
 
 export interface ToolConfig {
   id: string;
@@ -16,10 +17,43 @@ interface ToolTabsProps {
 }
 
 export function ToolTabs({ tools, defaultTool, onTabChange, children }: ToolTabsProps) {
-  const [activeTab, setActiveTab] = useState(defaultTool || tools[0]?.id);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // 验证并获取有效的初始 tab
+  const getValidTab = (tabId: string | null): string => {
+    if (tabId) {
+      const isValid = tools.some(tool => tool.id === tabId && !tool.comingSoon);
+      if (isValid) return tabId;
+    }
+    return defaultTool || tools[0]?.id;
+  };
+  
+  // 从 URL 参数读取初始 tab，如果无效则使用默认值
+  const [activeTab, setActiveTab] = useState(() => getValidTab(searchParams.get("tab")));
+
+  // 初始化时，如果 URL 中没有 tab 参数，则设置默认值
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (!tabFromUrl) {
+      setSearchParams({ tab: activeTab }, { replace: true });
+    }
+  }, []); // 只在组件挂载时执行一次
+
+  // 当 URL 参数变化时更新 activeTab（处理浏览器前进/后退）
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl) {
+      const isValid = tools.some(tool => tool.id === tabFromUrl && !tool.comingSoon);
+      if (isValid && tabFromUrl !== activeTab) {
+        setActiveTab(tabFromUrl);
+      }
+    }
+  }, [searchParams, tools, activeTab]);
 
   const handleTabChange = (toolId: string) => {
     setActiveTab(toolId);
+    // 更新 URL 参数
+    setSearchParams({ tab: toolId }, { replace: false });
     onTabChange?.(toolId);
   };
 
