@@ -1,10 +1,9 @@
-import { ShareIcon, PlusIcon, TrashIcon } from "@heroicons/react/outline";
+import { PlusIcon, TrashIcon } from "@heroicons/react/outline";
 import { DocumentTitle } from "./DocumentTitle";
 import { DiscordIconTransparent } from "./Icons/DiscordIconTransparent";
 import { EmailIconTransparent } from "./Icons/EmailIconTransparent";
 import { GithubStar } from "./UI/GithubStar";
 import { Logo } from "./Icons/Logo";
-import { Share } from "./Share";
 import { NewDocument } from "./NewDocument";
 import {
   Popover,
@@ -65,22 +64,6 @@ export function Header() {
           </PopoverTrigger>
           <PopoverContent side="bottom" sideOffset={8}>
             <NewDocument />
-            <PopoverArrow
-              className="fill-current text-indigo-700"
-              offset={20}
-            />
-          </PopoverContent>
-        </Popover>
-
-        <Popover>
-          <PopoverTrigger>
-            <button className="flex items-center justify-center py-1 bg-slate-200 text-slate-800 bg-opacity-90 text-base font-bold px-2 rounded uppercase hover:cursor-pointer hover:bg-opacity-100 transition">
-              <ShareIcon className="w-4 h-4 mr-1"></ShareIcon>
-              分享
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="bottom" sideOffset={8}>
-            <Share />
             <PopoverArrow
               className="fill-current text-indigo-700"
               offset={20}
