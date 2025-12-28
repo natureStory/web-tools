@@ -1,14 +1,24 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ClipboardIcon, CheckIcon, ExternalLinkIcon } from "@heroicons/react/outline";
+import { ClipboardIcon, CheckIcon, ExternalLinkIcon, ChevronDownIcon, ChevronRightIcon, PlusIcon, TrashIcon } from "@heroicons/react/outline";
 
 interface ParsedRequest {
   method: string;
   url: string;
-  headers: Record<string, string>;
+  headers: Array<{ key: string; value: string }>;
   body?: string;
   queryParams: Array<{ key: string; value: string }>;
 }
+
+// 请求体编辑模式
+type BodyEditMode = 'source' | 'form';
+
+// JSON 值类型
+type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+interface JsonObject {
+  [key: string]: JsonValue;
+}
+type JsonArray = JsonValue[];
 
 // Modal 组件
 function NestedUrlModal({ url, onClose, onUpdate }: { url: string; onClose: () => void; onUpdate?: (oldUrl: string, newUrl: string) => void }) {
@@ -124,13 +134,279 @@ function NestedUrlModal({ url, onClose, onUpdate }: { url: string; onClose: () =
   return createPortal(modalContent, document.body);
 }
 
+// 递归 JSON 表单编辑器组件
+function JsonFormEditor({ 
+  data, 
+  onChange, 
+  path = [] 
+}: { 
+  data: JsonValue; 
+  onChange: (newData: JsonValue) => void;
+  path?: string[];
+}) {
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const toggleCollapse = (key: string) => {
+    setCollapsed(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const isObject = (value: any): value is JsonObject => {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+  };
+
+  const isArray = (value: any): value is JsonArray => {
+    return Array.isArray(value);
+  };
+
+  const getType = (value: JsonValue): string => {
+    if (value === null) return 'null';
+    if (isArray(value)) return 'array';
+    if (isObject(value)) return 'object';
+    return typeof value;
+  };
+
+  const updateValue = (key: string | number, newValue: JsonValue) => {
+    if (isObject(data)) {
+      onChange({ ...data, [key]: newValue });
+    } else if (isArray(data)) {
+      const newArray = [...data];
+      newArray[key as number] = newValue;
+      onChange(newArray);
+    }
+  };
+
+  const updateKey = (oldKey: string, newKey: string) => {
+    if (isObject(data) && oldKey !== newKey) {
+      const newData: JsonObject = {};
+      Object.entries(data).forEach(([k, v]) => {
+        newData[k === oldKey ? newKey : k] = v;
+      });
+      onChange(newData);
+    }
+  };
+
+  const deleteItem = (key: string | number) => {
+    if (isObject(data)) {
+      const newData = { ...data };
+      delete newData[key as string];
+      onChange(newData);
+    } else if (isArray(data)) {
+      onChange(data.filter((_, i) => i !== key));
+    }
+  };
+
+  const addItem = () => {
+    if (isObject(data)) {
+      onChange({ ...data, '': '' });
+    } else if (isArray(data)) {
+      onChange([...data, '']);
+    }
+  };
+
+  const changeValueType = (key: string | number, newType: string) => {
+    let newValue: JsonValue;
+    switch (newType) {
+      case 'string':
+        newValue = '';
+        break;
+      case 'number':
+        newValue = 0;
+        break;
+      case 'boolean':
+        newValue = false;
+        break;
+      case 'null':
+        newValue = null;
+        break;
+      case 'object':
+        newValue = {};
+        break;
+      case 'array':
+        newValue = [];
+        break;
+      default:
+        newValue = '';
+    }
+    updateValue(key, newValue);
+  };
+
+  const renderPrimitiveInput = (key: string | number, value: JsonValue) => {
+    const type = getType(value);
+    
+    if (type === 'boolean') {
+      return (
+        <select
+          value={value ? 'true' : 'false'}
+          onChange={(e) => updateValue(key, e.target.value === 'true')}
+          className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400"
+        >
+          <option value="true">true</option>
+          <option value="false">false</option>
+        </select>
+      );
+    }
+
+    if (type === 'null') {
+      return (
+        <input
+          type="text"
+          value="null"
+          disabled
+          className="flex-1 bg-white/5 border border-white/20 rounded p-1.5 text-slate-400 text-xs"
+        />
+      );
+    }
+
+    if (type === 'number') {
+      return (
+        <input
+          type="number"
+          value={value as number}
+          onChange={(e) => updateValue(key, parseFloat(e.target.value) || 0)}
+          className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400"
+        />
+      );
+    }
+
+    return (
+      <input
+        type="text"
+        value={value as string}
+        onChange={(e) => updateValue(key, e.target.value)}
+        placeholder="Value"
+        className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400"
+      />
+    );
+  };
+
+  const renderItem = (key: string | number, value: JsonValue, index: number) => {
+    const type = getType(value);
+    const isComplex = type === 'object' || type === 'array';
+    const fullPath = [...path, String(key)].join('.');
+    const isCollapsed = collapsed[fullPath];
+
+    return (
+      <div key={index} className="group relative">
+        <div className="flex gap-2 items-start mb-1">
+          {/* 折叠按钮 */}
+          {isComplex && (
+            <button
+              onClick={() => toggleCollapse(fullPath)}
+              className="mt-1.5 text-slate-400 hover:text-white transition-colors"
+            >
+              {isCollapsed ? (
+                <ChevronRightIcon className="w-3 h-3" />
+              ) : (
+                <ChevronDownIcon className="w-3 h-3" />
+              )}
+            </button>
+          )}
+
+          {/* Key 输入 (对象) 或 索引显示 (数组) */}
+          {isObject(data) ? (
+            <input
+              type="text"
+              value={key}
+              onChange={(e) => updateKey(key as string, e.target.value)}
+              placeholder="Key"
+              className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400"
+              style={{ width: '120px' }}
+            />
+          ) : (
+            <div className="bg-white/5 border border-white/20 rounded p-1.5 text-slate-400 text-xs" style={{ width: '40px', textAlign: 'center' }}>
+              {key}
+            </div>
+          )}
+
+          {/* 类型选择器 */}
+          <select
+            value={type}
+            onChange={(e) => changeValueType(key, e.target.value)}
+            className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400"
+            style={{ width: '80px' }}
+          >
+            <option value="string">String</option>
+            <option value="number">Number</option>
+            <option value="boolean">Boolean</option>
+            <option value="null">Null</option>
+            <option value="object">Object</option>
+            <option value="array">Array</option>
+          </select>
+
+          {/* 值输入 (非复杂类型) */}
+          {!isComplex && renderPrimitiveInput(key, value)}
+
+          {/* 复杂类型显示 */}
+          {isComplex && (
+            <div className="flex-1 bg-white/5 border border-white/20 rounded p-1.5 text-slate-400 text-xs">
+              {isArray(value) ? `Array[${value.length}]` : `Object{${isObject(value) ? Object.keys(value).length : 0}}`}
+            </div>
+          )}
+
+          {/* 删除按钮 */}
+          <button
+            onClick={() => deleteItem(key)}
+            className="p-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded transition-colors border border-red-400/30 opacity-0 group-hover:opacity-100"
+            title="删除"
+          >
+            <TrashIcon className="w-3 h-3" />
+          </button>
+        </div>
+
+        {/* 嵌套内容 */}
+        {isComplex && !isCollapsed && (
+          <div className="ml-6 mt-2 pl-3 border-l-2 border-white/10">
+            <JsonFormEditor
+              data={value}
+              onChange={(newValue) => updateValue(key, newValue)}
+              path={[...path, String(key)]}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  if (isObject(data)) {
+    return (
+      <div className="space-y-2">
+        {Object.entries(data).map(([key, value], index) => renderItem(key, value, index))}
+        <button
+          onClick={addItem}
+          className="flex items-center gap-1 text-lime-400 hover:text-lime-300 text-xs font-medium transition-colors"
+        >
+          <PlusIcon className="w-3 h-3" />
+          添加字段
+        </button>
+      </div>
+    );
+  }
+
+  if (isArray(data)) {
+    return (
+      <div className="space-y-2">
+        {data.map((value, index) => renderItem(index, value, index))}
+        <button
+          onClick={addItem}
+          className="flex items-center gap-1 text-lime-400 hover:text-lime-300 text-xs font-medium transition-colors"
+        >
+          <PlusIcon className="w-3 h-3" />
+          添加项
+        </button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 // 嵌套 URL 解析器组件
 function NestedUrlParser({ initialUrl, onUrlChange }: { initialUrl: string; onUrlChange?: (newUrl: string) => void }) {
   const [parsed, setParsed] = useState<ParsedRequest>(() => {
     const result: ParsedRequest = {
       method: "GET",
       url: initialUrl,
-      headers: {},
+      headers: [],
       body: "",
       queryParams: [],
     };
@@ -442,13 +718,15 @@ export function UrlTool() {
   const [parsed, setParsed] = useState<ParsedRequest>({
     method: "GET",
     url: "",
-    headers: {},
+    headers: [],
     body: "",
     queryParams: [],
   });
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [showHeaders, setShowHeaders] = useState(false); // 控制请求头显示
   const [nestedModalUrl, setNestedModalUrl] = useState<string | null>(null); // 嵌套 URL Modal
+  const [bodyEditMode, setBodyEditMode] = useState<BodyEditMode>('form'); // 请求体编辑模式，默认为表单模式
+  const [bodyFormData, setBodyFormData] = useState<JsonValue>({}); // 表单模式的数据
 
   // 解析 URL 参数，保持原始顺序
   const parseUrlParams = (url: string): Array<{ key: string; value: string }> => {
@@ -469,7 +747,7 @@ export function UrlTool() {
     const result: ParsedRequest = {
       method: "GET",
       url: "",
-      headers: {},
+      headers: [],
       body: "",
       queryParams: [],
     };
@@ -490,7 +768,7 @@ export function UrlTool() {
     // 提取请求头
     const headerMatches = curlCommand.matchAll(/-H\s+['"]([^:]+):\s*([^'"]+)['"]/gi);
     for (const match of headerMatches) {
-      result.headers[match[1].trim()] = match[2].trim();
+      result.headers.push({ key: match[1].trim(), value: match[2].trim() });
     }
 
     // 提取请求体
@@ -517,7 +795,7 @@ export function UrlTool() {
     const result: ParsedRequest = {
       method: "GET",
       url: "",
-      headers: {},
+      headers: [],
       body: "",
       queryParams: [],
     };
@@ -542,7 +820,7 @@ export function UrlTool() {
       // 匹配所有的 key: value 对
       const headerPairs = headersStr.matchAll(/['"]([^'"]+)['"]\s*:\s*['"]([^'"]*)['"]/g);
       for (const match of headerPairs) {
-        result.headers[match[1]] = match[2];
+        result.headers.push({ key: match[1], value: match[2] });
       }
     }
 
@@ -582,7 +860,7 @@ export function UrlTool() {
     const result: ParsedRequest = {
       method: "GET",
       url: url,
-      headers: {},
+      headers: [],
       body: "",
       queryParams: parseUrlParams(url),
     };
@@ -606,6 +884,57 @@ export function UrlTool() {
     }
 
     setParsed(result);
+    
+    // 如果有请求体，尝试解析为表单数据
+    if (result.body) {
+      try {
+        const jsonData = JSON.parse(result.body);
+        setBodyFormData(jsonData);
+      } catch {
+        // 非 JSON 数据，保持为空对象
+        setBodyFormData({});
+      }
+    }
+  };
+
+  // 从表单数据同步到源码
+  const syncFormToSource = (formData: JsonValue) => {
+    try {
+      const jsonString = JSON.stringify(formData, null, 2);
+      setParsed({ ...parsed, body: jsonString });
+    } catch (err) {
+      console.error('同步失败:', err);
+    }
+  };
+
+  // 从源码同步到表单
+  const syncSourceToForm = () => {
+    try {
+      if (parsed.body) {
+        const jsonData = JSON.parse(parsed.body);
+        setBodyFormData(jsonData);
+      }
+    } catch (err) {
+      console.error('解析失败:', err);
+    }
+  };
+
+  // 切换编辑模式
+  const switchBodyEditMode = (mode: BodyEditMode) => {
+    if (mode === 'form' && bodyEditMode === 'source') {
+      // 从源码切换到表单，同步数据
+      syncSourceToForm();
+    } else if (mode === 'source' && bodyEditMode === 'form') {
+      // 从表单切换到源码，同步数据
+      syncFormToSource(bodyFormData);
+    }
+    setBodyEditMode(mode);
+  };
+
+  // 更新表单数据
+  const updateBodyFormData = (newData: JsonValue) => {
+    setBodyFormData(newData);
+    syncFormToSource(newData);
   };
 
   // 生成 curl 命令
@@ -614,8 +943,10 @@ export function UrlTool() {
 
     let curl = `curl -X ${parsed.method} '${parsed.url}'`;
 
-    Object.entries(parsed.headers).forEach(([key, value]) => {
-      curl += ` \\\n  -H '${key}: ${value}'`;
+    parsed.headers.forEach(({ key, value }) => {
+      if (key && value) {
+        curl += ` \\\n  -H '${key}: ${value}'`;
+      }
     });
 
     if (parsed.body) {
@@ -633,8 +964,16 @@ export function UrlTool() {
       method: parsed.method,
     };
 
-    if (Object.keys(parsed.headers).length > 0) {
-      options.headers = parsed.headers;
+    if (parsed.headers.length > 0) {
+      const headersObj: Record<string, string> = {};
+      parsed.headers.forEach(({ key, value }) => {
+        if (key && value) {
+          headersObj[key] = value;
+        }
+      });
+      if (Object.keys(headersObj).length > 0) {
+        options.headers = headersObj;
+      }
     }
 
     if (parsed.body) {
@@ -688,23 +1027,15 @@ export function UrlTool() {
   };
 
   // 更新请求头
-  const updateHeader = (oldKey: string, newKey: string, value: string) => {
-    const newHeaders = { ...parsed.headers };
-    if (oldKey !== newKey) {
-      delete newHeaders[oldKey];
-    }
-    if (newKey && value) {
-      newHeaders[newKey] = value;
-    } else if (!value) {
-      delete newHeaders[newKey];
-    }
+  const updateHeader = (index: number, newKey: string, value: string) => {
+    const newHeaders = [...parsed.headers];
+    newHeaders[index] = { key: newKey, value };
     setParsed({ ...parsed, headers: newHeaders });
   };
 
   // 删除请求头
-  const deleteHeader = (key: string) => {
-    const newHeaders = { ...parsed.headers };
-    delete newHeaders[key];
+  const deleteHeader = (index: number) => {
+    const newHeaders = parsed.headers.filter((_, i) => i !== index);
     setParsed({ ...parsed, headers: newHeaders });
   };
 
@@ -712,7 +1043,7 @@ export function UrlTool() {
   const addHeader = () => {
     setParsed({
       ...parsed,
-      headers: { ...parsed.headers, "": "" },
+      headers: [...parsed.headers, { key: "", value: "" }],
     });
   };
 
@@ -1051,15 +1382,15 @@ export function UrlTool() {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    {Object.entries(parsed.headers).length === 0 ? (
+                    {parsed.headers.length === 0 ? (
                       <p className="text-slate-400 text-xs text-center py-4">暂无请求头</p>
                     ) : (
-                      Object.entries(parsed.headers).map(([key, value], index) => (
+                      parsed.headers.map(({ key, value }, index) => (
                         <div key={index} className="flex gap-2 group relative">
                           <input
                             type="text"
                             value={key}
-                            onChange={(e) => updateHeader(key, e.target.value, value)}
+                            onChange={(e) => updateHeader(index, e.target.value, value)}
                             placeholder="Key"
                             className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
                             style={{ flex: '1' }}
@@ -1067,13 +1398,13 @@ export function UrlTool() {
                           <input
                             type="text"
                             value={value}
-                            onChange={(e) => updateHeader(key, key, e.target.value)}
+                            onChange={(e) => updateHeader(index, key, e.target.value)}
                             placeholder="Value"
                             className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
                             style={{ flex: '2' }}
                           />
                           <button
-                            onClick={() => deleteHeader(key)}
+                            onClick={() => deleteHeader(index)}
                             className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-bold shadow-lg"
                             style={{ width: '12px', height: '12px', fontSize: '9px', lineHeight: '12px' }}
                             title="删除"
@@ -1150,30 +1481,89 @@ export function UrlTool() {
                 {/* 请求体（仅 POST/PUT/PATCH 显示） */}
                 {parsed.method !== "GET" && parsed.method !== "HEAD" && (
                   <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex justify-between items-center mb-3">
                       <h3 className="text-lime-400 font-semibold text-xs">请求体</h3>
-                      <button
-                        onClick={() => {
-                          try {
-                            const formatted = JSON.stringify(JSON.parse(parsed.body || ""), null, 2);
-                            setParsed({ ...parsed, body: formatted });
-                          } catch {
-                            // JSON 格式不正确，不做处理
-                          }
-                        }}
-                        className="text-lime-400 hover:text-lime-300 text-xs font-medium transition-colors"
-                      >
-                        格式化
-                      </button>
+                      <div className="flex gap-2 items-center">
+                        {/* 模式切换按钮 */}
+                        <div className="flex bg-white/5 rounded border border-white/20 overflow-hidden">
+                          <button
+                            onClick={() => switchBodyEditMode('source')}
+                            className={`px-3 py-1 text-xs font-medium transition-colors ${
+                              bodyEditMode === 'source'
+                                ? 'bg-lime-400 text-slate-900'
+                                : 'text-slate-300 hover:text-white'
+                            }`}
+                          >
+                            源码
+                          </button>
+                          <button
+                            onClick={() => switchBodyEditMode('form')}
+                            className={`px-3 py-1 text-xs font-medium transition-colors ${
+                              bodyEditMode === 'form'
+                                ? 'bg-lime-400 text-slate-900'
+                                : 'text-slate-300 hover:text-white'
+                            }`}
+                          >
+                            表单
+                          </button>
+                        </div>
+                        
+                        {/* 格式化按钮 (仅源码模式显示) */}
+                        {bodyEditMode === 'source' && (
+                          <button
+                            onClick={() => {
+                              try {
+                                const formatted = JSON.stringify(JSON.parse(parsed.body || ""), null, 2);
+                                setParsed({ ...parsed, body: formatted });
+                              } catch {
+                                // JSON 格式不正确，不做处理
+                              }
+                            }}
+                            className="text-lime-400 hover:text-lime-300 text-xs font-medium transition-colors"
+                          >
+                            格式化
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <textarea
-                      value={parsed.body}
-                      onChange={(e) => setParsed({ ...parsed, body: e.target.value })}
-                      placeholder="JSON 或文本数据"
-                      rows={calculateBodyRows(parsed.body || "")}
-                      className="w-full bg-white/10 border border-white/20 rounded p-2 text-white font-mono text-xs resize-y focus:outline-none focus:border-lime-400 transition-colors overflow-y-auto"
-                      style={{ maxHeight: '600px', minHeight: '120px' }}
-                    />
+
+                    {/* 源码模式 */}
+                    {bodyEditMode === 'source' && (
+                      <textarea
+                        value={parsed.body}
+                        onChange={(e) => setParsed({ ...parsed, body: e.target.value })}
+                        placeholder="JSON 或文本数据"
+                        rows={calculateBodyRows(parsed.body || "")}
+                        className="w-full bg-white/10 border border-white/20 rounded p-2 text-white font-mono text-xs resize-y focus:outline-none focus:border-lime-400 transition-colors overflow-y-auto"
+                        style={{ maxHeight: '600px', minHeight: '120px' }}
+                      />
+                    )}
+
+                    {/* 表单模式 */}
+                    {bodyEditMode === 'form' && (
+                      <div className="bg-white/10 border border-white/20 rounded p-3 max-h-[600px] overflow-y-auto">
+                        {parsed.body && parsed.body.trim() ? (
+                          <JsonFormEditor
+                            data={bodyFormData}
+                            onChange={updateBodyFormData}
+                          />
+                        ) : (
+                          <div className="text-center py-8">
+                            <p className="text-slate-400 text-xs mb-3">请求体为空</p>
+                            <button
+                              onClick={() => {
+                                const initialData = {};
+                                setBodyFormData(initialData);
+                                setParsed({ ...parsed, body: JSON.stringify(initialData, null, 2) });
+                              }}
+                              className="px-4 py-2 bg-lime-400/20 hover:bg-lime-400/30 text-lime-400 rounded text-xs font-medium transition-colors border border-lime-400/30"
+                            >
+                              创建 JSON 对象
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
           </div>
                 )}
           </div>
