@@ -846,7 +846,7 @@ export function UrlTool() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div>
       <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 shadow-2xl">
         <h2 className="text-2xl font-semibold text-white mb-6">URL 工具</h2>
 

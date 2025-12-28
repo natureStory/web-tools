@@ -23,13 +23,15 @@ export function HomeHeroSection() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-[rgb(56,52,139)] via-[rgb(66,62,159)] to-[rgb(76,72,179)] min-h-screen">
+    <div className="bg-gradient-to-br from-[rgb(56,52,139)] via-[rgb(66,62,159)] to-[rgb(76,72,179)] h-screen flex flex-col overflow-hidden">
       {/* 工具选项卡 */}
       <ToolTabs tools={toolsConfig} defaultTool="json">
         {(activeToolId) => (
-          <div className="container mx-auto px-4 pb-6">
-            <div className="animate-fadeIn">
-              {renderToolContent(activeToolId)}
+          <div className="flex-1 overflow-y-auto">
+            <div className="container mx-auto px-4 py-6">
+              <div className="animate-fadeIn">
+                {renderToolContent(activeToolId)}
+              </div>
             </div>
           </div>
         )}

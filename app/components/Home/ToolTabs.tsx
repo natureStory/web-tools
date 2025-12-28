@@ -25,8 +25,8 @@ export function ToolTabs({ tools, defaultTool, onTabChange, children }: ToolTabs
 
   return (
     <>
-      {/* Tab 导航 - 固定定位 */}
-      <div className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[rgb(56,52,139)]/90 shadow-lg shadow-black/20 border-b border-white/20">
+      {/* Tab 导航 */}
+      <div className="flex-shrink-0 backdrop-blur-md bg-[rgb(56,52,139)]/90 shadow-lg shadow-black/20 border-b border-white/20">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center gap-4 flex-wrap">
             {/* 网站名 */}
@@ -82,13 +82,8 @@ export function ToolTabs({ tools, defaultTool, onTabChange, children }: ToolTabs
         </div>
       </div>
 
-      {/* 占位空间 - 防止内容被导航栏遮挡 */}
-      <div className="h-[68px]"></div>
-
       {/* Tab 内容 */}
-      <div className="w-full">
-        {children(activeTab)}
-      </div>
+      {children(activeTab)}
     </>
   );
 }
