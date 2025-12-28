@@ -42,14 +42,7 @@ export default function Index() {
         />
       )}
 
-      <HomeHeader fixed={true} />
       <HomeHeroSection />
-      {/* <HomeInfoBoxSection />
-      <HomeEdgeCasesSection />
-      <HomeSearchSection />
-      <HomeCollaborateSection />
-      <HomeFeatureGridSection />
-      <HomeFooter /> */}
     </div>
   );
 }

@@ -70,20 +70,25 @@ export function CodeEditor(opts: CodeEditorProps) {
     }
   }, [editor.current]);
 
-  const setSelectionRef = useRef(false);
+  // 跟踪上次选择的位置，当 selection 改变时才更新
+  const previousSelectionRef = useRef<{ start: number; end: number } | undefined>(undefined);
 
   useEffect(() => {
-    if (setSelectionRef.current) {
+    if (!view || !state) {
       return;
     }
 
-    if (view) {
-      setSelectionRef.current = true;
+    const selectionStart = selection?.start ?? defaultProps.selection.start;
+    const selectionEnd = selection?.end ?? defaultProps.selection.end;
 
-      const selectionStart = selection?.start ?? defaultProps.selection.start;
-      const selectionEnd = selection?.end ?? defaultProps.selection.end;
+    // 检查 selection 是否真的改变了
+    const hasChanged = 
+      !previousSelectionRef.current ||
+      previousSelectionRef.current.start !== selectionStart ||
+      previousSelectionRef.current.end !== selectionEnd;
 
-      const lineNumber = state?.doc.lineAt(selectionStart).number;
+    if (hasChanged) {
+      previousSelectionRef.current = { start: selectionStart, end: selectionEnd };
 
       const transactionSpec: TransactionSpec = {
         selection: { anchor: selectionStart, head: selectionEnd },
@@ -95,7 +100,7 @@ export function CodeEditor(opts: CodeEditorProps) {
 
       view.dispatch(transactionSpec);
     }
-  }, [selection, view, setSelectionRef.current]);
+  }, [selection, view, state]);
 
   const { minimal } = useJsonDoc();
 

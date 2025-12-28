@@ -1,39 +1,55 @@
-import { AutoplayVideo } from "../AutoplayVideo";
-import { NewFile } from "../NewFile";
-import { ExtraLargeTitle } from "../Primitives/ExtraLargeTitle";
-import { SmallSubtitle } from "../Primitives/SmallSubtitle";
-
-import heroVideo from "~/assets/home/JsonHero2.mp4";
-
-const jsonHeroTitle = "JSON sucks.";
-const jsonHeroSlogan = "But we're making it better.";
+import { ToolTabs } from "./ToolTabs";
+import { toolsConfig } from "./tools/toolsConfig";
+import { JsonTool } from "./tools/JsonTool";
+import { UrlTool } from "./tools/UrlTool";
 
 export function HomeHeroSection() {
+  const renderToolContent = (toolId: string) => {
+    switch (toolId) {
+      case "json":
+        return <JsonTool />;
+      case "url":
+        return <UrlTool />;
+      default:
+        return (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-12 border border-white/10 shadow-2xl text-center">
+              <h3 className="text-2xl font-semibold text-white mb-3">即将推出</h3>
+              <p className="text-slate-400">这个工具正在开发中，敬请期待...</p>
+            </div>
+          </div>
+        );
+    }
+  };
+
   return (
-    <div
-      className={`flex items-stretch flex-col md:flex-row bg-[rgb(56,52,139)] lg:p-6 lg:pb-16 pt-20 lg:pt-32 min-h-screen`}
-    >
-      {/* <div className="self-center md:w-1/2 md:pr-10 flex justify-end">
-        <div className=" max-w-3xl">
-          <AutoplayVideo src={heroVideo} />
-        </div>
-      </div> */}
-      <div className="self-center flex align-center md:w-1/2 px-6 pb-8 mt-8 lg:mt-0">
-        <div className="max-w-lg">
-          {/* <ExtraLargeTitle className="text-lime-300">
-            {jsonHeroTitle}
-          </ExtraLargeTitle>
-          <ExtraLargeTitle className="text-white mb-4">
-            {jsonHeroSlogan}
-          </ExtraLargeTitle>
-          <SmallSubtitle className="text-slate-200 mb-8">
-            Stop staring at thousand line JSON files in your editor and start
-            staring at thousand line JSON files in the world's best JSON viewer.
-            With a few nice features to help make it not <em>the worst</em>.
-          </SmallSubtitle> */}
-          <NewFile />
-        </div>
-      </div>
+    <div className="bg-gradient-to-br from-[rgb(56,52,139)] via-[rgb(66,62,159)] to-[rgb(76,72,179)] min-h-screen">
+      {/* 工具选项卡 */}
+      <ToolTabs tools={toolsConfig} defaultTool="json">
+        {(activeToolId) => (
+          <div className="container mx-auto px-4 pb-6">
+            <div className="animate-fadeIn">
+              {renderToolContent(activeToolId)}
+            </div>
+          </div>
+        )}
+      </ToolTabs>
+
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

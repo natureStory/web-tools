@@ -40,12 +40,12 @@ export function UrlForm({ className }: UrlFormProps) {
       onSubmit={handleSubmit}
       className={`${className}`}
     >
-      <div className="flex">
+      <div className="flex gap-2">
         <input
           type="text"
           name="jsonUrl"
           id="jsonUrl"
-          className="block flex-grow text-base text-slate-200 placeholder:text-slate-300 bg-slate-900/40 border border-slate-600 rounded-l-sm py-2 px-3 transition duration-300 focus:ring-indigo-500 focus:border-indigo-500"
+          className="block flex-grow text-base text-white placeholder:text-slate-400 bg-white/10 border border-white/20 rounded-lg py-3 px-4 transition duration-200 focus:ring-2 focus:ring-lime-400 focus:border-lime-400 focus:bg-white/15"
           placeholder="输入 JSON URL 或粘贴 JSON 内容..."
           value={inputValue}
           onChange={(event) => setInputValue(event.target.value)}
@@ -53,12 +53,17 @@ export function UrlForm({ className }: UrlFormProps) {
         <button
           type="submit"
           value="Go"
-          className={`inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-r-sm text-white bg-lime-500 transition hover:bg-lime-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 ${
-            isButtonDisabled && "disabled:opacity-50 disabled:hover:bg-lime-500"
+          className={`inline-flex items-center justify-center px-6 py-3 border border-transparent font-semibold rounded-lg text-slate-900 bg-lime-400 transition-all duration-200 hover:bg-lime-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-400 ${
+            isButtonDisabled && "disabled:opacity-50 disabled:cursor-not-allowed"
           }`}
           disabled={isButtonDisabled}
         >
-          {isSubmitting ? "..." : "提交"}
+          {isSubmitting ? (
+            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          ) : "提交"}
         </button>
       </div>
     </form>

@@ -62,19 +62,23 @@ export function DragAndDropForm() {
   return (
     <div
       {...getRootProps()}
-      className="block min-w-[300px] cursor-pointer rounded-md border-2 border-dashed border-slate-600 bg-slate-900/40 p-4 text-base text-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+      className={`block min-w-[300px] cursor-pointer rounded-lg border-2 border-dashed p-6 text-base transition-all duration-200 ${
+        isDragActive
+          ? "border-lime-400 bg-lime-500/10 text-lime-300"
+          : "border-white/20 bg-white/5 text-slate-300 hover:border-white/40 hover:bg-white/10"
+      }`}
     >
       <input {...getInputProps()} />
-      <div className="flex items-center">
+      <div className="flex items-center justify-center">
         <ArrowCircleDownIcon
-          className={`mr-3 inline h-6 w-6 ${
-            isDragActive ? "text-lime-500" : ""
+          className={`mr-3 inline h-6 w-6 transition-colors ${
+            isDragActive ? "text-lime-400" : "text-slate-400"
           }`}
         />
-        <p className={`${isDragActive ? "text-lime-500" : ""}`}>
+        <p className="font-medium">
           {isDragActive
-            ? "现在拖拽打开它…"
-            : "拖拽 JSON 文件到这里, 或点击选择"}
+            ? "松开以上传文件..."
+            : "拖拽 JSON 文件到这里，或点击选择"}
         </p>
       </div>
     </div>

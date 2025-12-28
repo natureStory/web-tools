@@ -108,6 +108,9 @@ export async function createFromUrl(
         transaction.onerror = () => reject(transaction.error);
       });
       db.close();
+      
+      // 触发自定义事件通知文档已创建
+      window.dispatchEvent(new Event("documentCreated"));
     } catch (error) {
       console.error("Failed to save document to IndexedDB:", error);
     }
@@ -143,6 +146,9 @@ export async function createFromRawJson(
         transaction.onerror = () => reject(transaction.error);
       });
       db.close();
+      
+      // 触发自定义事件通知文档已创建
+      window.dispatchEvent(new Event("documentCreated"));
     } catch (error) {
       console.error("Failed to save document to IndexedDB:", error);
     }
@@ -214,6 +220,9 @@ export async function updateDocument(
         transaction.onerror = () => reject(transaction.error);
       });
       db.close();
+      
+      // 触发自定义事件通知文档已更新
+      window.dispatchEvent(new Event("documentUpdated"));
     } catch (error) {
       console.error("Failed to update document in IndexedDB:", error);
     }
@@ -235,6 +244,9 @@ export async function deleteDocument(slug: string): Promise<void> {
       transaction.onerror = () => reject(transaction.error);
     });
     db.close();
+    
+    // 触发自定义事件通知文档已删除
+    window.dispatchEvent(new Event("documentDeleted"));
   } catch (error) {
     console.error("Failed to delete document from IndexedDB:", error);
   }
