@@ -20,7 +20,7 @@ export const toolsConfig: ToolConfig[] = [
       </svg>
     ),
     description: "编码和解析",
-    comingSoon: true,
+    comingSoon: false,
   },
   {
     id: "base64",
