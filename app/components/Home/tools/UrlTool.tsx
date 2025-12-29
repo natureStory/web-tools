@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { ClipboardIcon, CheckIcon, ExternalLinkIcon, ChevronDownIcon, ChevronRightIcon, PlusIcon, TrashIcon } from "@heroicons/react/outline";
 
 interface ParsedRequest {
@@ -20,119 +19,6 @@ interface JsonObject {
 }
 type JsonArray = JsonValue[];
 
-// Modal 组件
-function NestedUrlModal({ url, onClose, onUpdate }: { url: string; onClose: () => void; onUpdate?: (oldUrl: string, newUrl: string) => void }) {
-  const [mounted, setMounted] = useState(false);
-  const [updatedUrl, setUpdatedUrl] = useState(url);
-
-  // 禁止背景滚动
-  useEffect(() => {
-    setMounted(true);
-    
-    // 保存原始的 overflow 值
-    const originalOverflow = document.body.style.overflow;
-    const originalPaddingRight = document.body.style.paddingRight;
-    
-    // 计算滚动条宽度
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    
-    // 禁止滚动并补偿滚动条宽度
-    document.body.style.overflow = 'hidden';
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
-    
-    // 清理函数：恢复原始值
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      document.body.style.paddingRight = originalPaddingRight;
-    };
-  }, []);
-
-  const handleClose = () => {
-    // 如果 URL 已更新，通知父组件
-    if (updatedUrl !== url && onUpdate) {
-      onUpdate(url, updatedUrl);
-    }
-    onClose();
-  };
-
-  if (!mounted) return null;
-
-  const modalContent = (
-    <div 
-      onClick={handleClose}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-        zIndex: 100
-      }}
-    >
-      <div 
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: 'rgb(15, 23, 42)',
-          borderRadius: '1rem',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          width: '100%',
-          maxWidth: '1200px',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
-        {/* 固定的标题栏 */}
-        <div 
-          style={{
-            flexShrink: 0,
-            backgroundColor: 'rgb(15, 23, 42)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            padding: '1rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderTopLeftRadius: '1rem',
-            borderTopRightRadius: '1rem'
-          }}
-        >
-          <h3 className="text-white font-semibold">嵌套 URL 解析</h3>
-          <button
-            onClick={handleClose}
-            className="text-slate-400 hover:text-white transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        {/* 可滚动的内容区域 */}
-        <div 
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '1.5rem'
-          }}
-        >
-          <NestedUrlParser 
-            initialUrl={url}
-            onUrlChange={setUpdatedUrl}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  return createPortal(modalContent, document.body);
-}
 
 // 递归 JSON 表单编辑器组件
 function JsonFormEditor({ 
@@ -426,7 +312,7 @@ function NestedUrlParser({ initialUrl, onUrlChange }: { initialUrl: string; onUr
     return result;
   });
   
-  const [nestedModalUrl, setNestedModalUrl] = useState<string | null>(null);
+  const [expandedNestedUrls, setExpandedNestedUrls] = useState<Record<number, boolean>>({});
   
   // 检测值是否是 URL
   const isUrl = (value: string): boolean => {
@@ -634,81 +520,77 @@ function NestedUrlParser({ initialUrl, onUrlChange }: { initialUrl: string; onUr
               <p className="text-slate-400 text-xs text-center py-4">暂无查询参数</p>
             ) : (
               parsed.queryParams.map(({ key, value }, index) => (
-                <div key={index} className="flex gap-2 items-start group relative">
-                  <div style={{ flex: '1' }}>
-                    <input
-                      type="text"
-                      value={key}
-                      onChange={(e) => updateQueryParam(index, e.target.value, value)}
-                      placeholder="Key"
-                      className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
-                    />
+                <div key={index} className="mb-3">
+                  <div className="flex gap-2 items-start group relative">
+                    <div style={{ flex: '1' }}>
+                      <input
+                        type="text"
+                        value={key}
+                        onChange={(e) => updateQueryParam(index, e.target.value, value)}
+                        placeholder="Key"
+                        className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
+                      />
+                    </div>
+                    <div style={{ flex: '2' }} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={value}
+                        onChange={(e) => updateQueryParam(index, key, e.target.value)}
+                        placeholder="Value"
+                        className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors"
+                      />
+                      {isUrl(value) && (
+                        <button
+                          onClick={() => setExpandedNestedUrls(prev => ({ ...prev, [index]: !prev[index] }))}
+                          className="px-2 py-1.5 bg-lime-400/20 hover:bg-lime-400/30 text-lime-400 rounded text-xs font-medium transition-colors border border-lime-400/30 flex items-center gap-1"
+                          title={expandedNestedUrls[index] ? "收起" : "展开解析"}
+                        >
+                          {expandedNestedUrls[index] ? (
+                            <>
+                              <ChevronDownIcon className="w-3 h-3" />
+                              收起
+                            </>
+                          ) : (
+                            <>
+                              <ChevronRightIcon className="w-3 h-3" />
+                              解析
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => deleteQueryParam(index)}
+                      className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-bold shadow-lg"
+                      style={{ width: '12px', height: '12px', fontSize: '9px', lineHeight: '12px' }}
+                      title="删除"
+                    >
+                      ×
+                    </button>
                   </div>
-                  <div style={{ flex: '2' }} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={value}
-                      onChange={(e) => updateQueryParam(index, key, e.target.value)}
-                      placeholder="Value"
-                      className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors"
-                    />
-                    {isUrl(value) && (
-                      <button
-                        onClick={() => setNestedModalUrl(decodeURIComponent(value))}
-                        className="px-2 py-1.5 bg-lime-400/20 hover:bg-lime-400/30 text-lime-400 rounded text-xs font-medium transition-colors border border-lime-400/30 flex items-center gap-1"
-                        title="解析嵌套 URL"
-                      >
-                        <ExternalLinkIcon className="w-3 h-3" />
-                        解析
-                      </button>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => deleteQueryParam(index)}
-                    className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-bold shadow-lg"
-                    style={{ width: '12px', height: '12px', fontSize: '9px', lineHeight: '12px' }}
-                    title="删除"
-                  >
-                    ×
-                  </button>
+                  
+                  {/* 嵌套 URL 解析器（折叠展开） */}
+                  {isUrl(value) && expandedNestedUrls[index] && (
+                    <div className="mt-3 ml-4 p-4 bg-white/10 rounded-lg border border-lime-400/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-px flex-1 bg-lime-400/30"></div>
+                        <span className="text-lime-400 text-xs font-medium">嵌套 URL 解析</span>
+                        <div className="h-px flex-1 bg-lime-400/30"></div>
+                      </div>
+                      <NestedUrlParser 
+                        initialUrl={decodeURIComponent(value)}
+                        onUrlChange={(newUrl) => {
+                          updateQueryParam(index, key, encodeURIComponent(newUrl));
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ))
             )}
           </div>
         </div>
       </div>
-      
-      {/* 递归嵌套 Modal */}
-      {nestedModalUrl && (
-        <NestedUrlModal
-          url={nestedModalUrl}
-          onClose={() => setNestedModalUrl(null)}
-          onUpdate={(oldUrl, newUrl) => {
-            // 更新查询参数中的嵌套 URL
-            const newParams = parsed.queryParams.map(param => {
-              try {
-                const decoded = decodeURIComponent(param.value);
-                if (decoded === oldUrl) {
-                  return { ...param, value: encodeURIComponent(newUrl) };
-                }
-              } catch {}
-              return param;
-            });
-            
-            // 更新主 URL
-            try {
-              const urlObj = new URL(parsed.url);
-              urlObj.search = '';
-              newParams.forEach(({ key, value }) => {
-                if (key && value) {
-                  urlObj.searchParams.append(key, value);
-                }
-              });
-              setParsed({ ...parsed, url: urlObj.toString(), queryParams: newParams });
-            } catch {}
-          }}
-        />
-      )}
     </>
   );
 }
@@ -724,7 +606,7 @@ export function UrlTool() {
   });
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [showHeaders, setShowHeaders] = useState(false); // 控制请求头显示
-  const [nestedModalUrl, setNestedModalUrl] = useState<string | null>(null); // 嵌套 URL Modal
+  const [expandedNestedUrls, setExpandedNestedUrls] = useState<Record<number, boolean>>({}); // 嵌套 URL 展开状态
   const [bodyEditMode, setBodyEditMode] = useState<BodyEditMode>('form'); // 请求体编辑模式，默认为表单模式
   const [bodyFormData, setBodyFormData] = useState<JsonValue>({}); // 表单模式的数据
 
@@ -1478,42 +1360,70 @@ export function UrlTool() {
                       <p className="text-slate-400 text-xs text-center py-4">暂无查询参数</p>
                     ) : (
                       parsed.queryParams.map(({ key, value }, index) => (
-                        <div key={index} className="flex gap-2 items-start group relative">
-                          <input
-                            type="text"
-                            value={key}
-                            onChange={(e) => updateQueryParam(index, e.target.value, value)}
-                            placeholder="Key"
-                            className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
-                            style={{ flex: '1' }}
-                          />
-                          <div style={{ flex: '2' }} className="flex gap-2">
+                        <div key={index} className="mb-3">
+                          <div className="flex gap-2 items-start group relative">
                             <input
                               type="text"
-                              value={value}
-                              onChange={(e) => updateQueryParam(index, key, e.target.value)}
-                              placeholder="Value"
-                              className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
+                              value={key}
+                              onChange={(e) => updateQueryParam(index, e.target.value, value)}
+                              placeholder="Key"
+                              className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
+                              style={{ flex: '1' }}
                             />
-                            {isUrl(value) && (
-                              <button
-                                onClick={() => setNestedModalUrl(decodeURIComponent(value))}
-                                className="px-2 py-1.5 bg-lime-400/20 hover:bg-lime-400/30 text-lime-400 rounded text-xs font-medium transition-colors border border-lime-400/30 flex items-center gap-1 whitespace-nowrap"
-                                title="解析嵌套 URL"
-                              >
-                                <ExternalLinkIcon className="w-3 h-3" />
-                                解析
-                              </button>
-                            )}
+                            <div style={{ flex: '2' }} className="flex gap-2">
+                              <input
+                                type="text"
+                                value={value}
+                                onChange={(e) => updateQueryParam(index, key, e.target.value)}
+                                placeholder="Value"
+                                className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
+                              />
+                              {isUrl(value) && (
+                                <button
+                                  onClick={() => setExpandedNestedUrls(prev => ({ ...prev, [index]: !prev[index] }))}
+                                  className="px-2 py-1.5 bg-lime-400/20 hover:bg-lime-400/30 text-lime-400 rounded text-xs font-medium transition-colors border border-lime-400/30 flex items-center gap-1 whitespace-nowrap"
+                                  title={expandedNestedUrls[index] ? "收起" : "展开解析"}
+                                >
+                                  {expandedNestedUrls[index] ? (
+                                    <>
+                                      <ChevronDownIcon className="w-3 h-3" />
+                                      收起
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ChevronRightIcon className="w-3 h-3" />
+                                      解析
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => deleteQueryParam(index)}
+                              className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-bold shadow-lg"
+                              style={{ width: '12px', height: '12px', fontSize: '9px', lineHeight: '12px' }}
+                              title="删除"
+                            >
+                              ×
+                            </button>
                           </div>
-                          <button
-                            onClick={() => deleteQueryParam(index)}
-                            className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-bold shadow-lg"
-                            style={{ width: '12px', height: '12px', fontSize: '9px', lineHeight: '12px' }}
-                            title="删除"
-                          >
-                            ×
-                          </button>
+                          
+                          {/* 嵌套 URL 解析器（折叠展开） */}
+                          {isUrl(value) && expandedNestedUrls[index] && (
+                            <div className="mt-3 ml-4 p-4 bg-white/10 rounded-lg border border-lime-400/30">
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="h-px flex-1 bg-lime-400/30"></div>
+                                <span className="text-lime-400 text-xs font-medium">嵌套 URL 解析</span>
+                                <div className="h-px flex-1 bg-lime-400/30"></div>
+                              </div>
+                              <NestedUrlParser 
+                                initialUrl={decodeURIComponent(value)}
+                                onUrlChange={(newUrl) => {
+                                  updateQueryParam(index, key, encodeURIComponent(newUrl));
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
@@ -1612,28 +1522,6 @@ export function UrlTool() {
           </div>
 
           </div>
-        )}
-        
-        {/* 嵌套 URL Modal */}
-        {nestedModalUrl && (
-          <NestedUrlModal
-            url={nestedModalUrl}
-            onClose={() => setNestedModalUrl(null)}
-            onUpdate={(oldUrl, newUrl) => {
-              // 查找并更新查询参数中的嵌套 URL
-              const newParams = parsed.queryParams.map(param => {
-                try {
-                  const decoded = decodeURIComponent(param.value);
-                  if (decoded === oldUrl) {
-                    return { ...param, value: newUrl };
-                  }
-                } catch {}
-                return param;
-              });
-              
-              setParsed({ ...parsed, queryParams: newParams });
-            }}
-          />
         )}
       </div>
     </div>
