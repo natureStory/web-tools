@@ -957,7 +957,22 @@ export function UrlTool() {
       return str.replace(/'/g, "'\\''");
     };
 
-    let curl = `curl -X ${parsed.method} '${escapeShellSingleQuote(parsed.url)}'`;
+    // 使用最新的 URL（包含更新后的查询参数）
+    let currentUrl = parsed.url;
+    try {
+      const urlObj = new URL(parsed.url);
+      urlObj.search = "";
+      parsed.queryParams.forEach(({ key, value }) => {
+        if (key && value) {
+          urlObj.searchParams.append(key, value);
+        }
+      });
+      currentUrl = urlObj.toString();
+    } catch {
+      currentUrl = parsed.url;
+    }
+    
+    let curl = `curl -X ${parsed.method} '${escapeShellSingleQuote(currentUrl)}'`;
 
     parsed.headers.forEach(({ key, value }) => {
       if (key && value) {
@@ -987,54 +1002,60 @@ export function UrlTool() {
         .replace(/\t/g, '\\t');
     };
 
-    const options: any = {
-      method: parsed.method,
-    };
-
-    if (parsed.headers.length > 0) {
-      const headersObj: Record<string, string> = {};
-      parsed.headers.forEach(({ key, value }) => {
+    // 使用最新的 URL（包含更新后的查询参数）
+    let currentUrl = parsed.url;
+    try {
+      const urlObj = new URL(parsed.url);
+      urlObj.search = "";
+      parsed.queryParams.forEach(({ key, value }) => {
         if (key && value) {
-          headersObj[key] = value;
+          urlObj.searchParams.append(key, value);
         }
       });
-      if (Object.keys(headersObj).length > 0) {
-        options.headers = headersObj;
-      }
+      currentUrl = urlObj.toString();
+    } catch {
+      currentUrl = parsed.url;
     }
-
+    
+    const escapedUrl = escapeJsString(currentUrl);
+    
+    // 手动构建 fetch 代码，避免字符串替换问题
+    let fetchCode = `fetch('${escapedUrl}', {\n  method: '${parsed.method}'`;
+    
+    // 添加请求头
+    const validHeaders = parsed.headers.filter(({ key, value }) => key && value);
+    if (validHeaders.length > 0) {
+      fetchCode += ',\n  headers: {\n';
+      validHeaders.forEach(({ key, value }, index) => {
+        fetchCode += `    '${escapeJsString(key)}': '${escapeJsString(value)}'`;
+        if (index < validHeaders.length - 1) {
+          fetchCode += ',';
+        }
+        fetchCode += '\n';
+      });
+      fetchCode += '  }';
+    }
+    
+    // 添加请求体
     if (parsed.body) {
+      fetchCode += ',\n  body: ';
       try {
         // 尝试解析为 JSON
-        JSON.parse(parsed.body);
-        options.body = `JSON.stringify(${parsed.body})`;
+        const jsonObj = JSON.parse(parsed.body);
+        // 格式化 JSON，并缩进
+        const formattedJson = JSON.stringify(jsonObj, null, 2);
+        // 对每一行添加适当的缩进（除了第一行）
+        const indentedJson = formattedJson.split('\n').map((line, index) => {
+          return index === 0 ? line : '  ' + line;
+        }).join('\n');
+        fetchCode += `JSON.stringify(${indentedJson})`;
       } catch {
-        // 不是 JSON，需要转义
-        options.body = `'${escapeJsString(parsed.body)}'`;
+        // 不是 JSON，作为普通字符串
+        fetchCode += `'${escapeJsString(parsed.body)}'`;
       }
     }
-
-    // 转义 URL
-    const escapedUrl = escapeJsString(parsed.url);
-    let fetchCode = `fetch('${escapedUrl}', ${JSON.stringify(options, null, 2)})`;
-
-    // 处理 body 的特殊格式
-    if (parsed.body) {
-      try {
-        JSON.parse(parsed.body);
-        fetchCode = fetchCode.replace(
-          `"body": "JSON.stringify(${parsed.body})"`,
-          `body: JSON.stringify(${parsed.body})`
-        );
-      } catch {
-        const escapedBody = escapeJsString(parsed.body);
-        fetchCode = fetchCode.replace(
-          `"body": "'${escapedBody}'"`,
-          `body: '${escapedBody}'`
-        );
-      }
-    }
-
+    
+    fetchCode += '\n})';
     fetchCode += "\n  .then(response => response.json())\n  .then(data => console.log(data));";
 
     return fetchCode;
