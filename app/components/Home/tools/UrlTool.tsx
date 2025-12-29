@@ -160,7 +160,7 @@ function JsonFormEditor({
         value={value as string}
         onChange={(e) => updateValue(key, e.target.value)}
         placeholder="Value"
-        className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400"
+        className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 placeholder:text-slate-400"
       />
     );
   };
@@ -195,7 +195,7 @@ function JsonFormEditor({
               value={key}
               onChange={(e) => updateKey(key as string, e.target.value)}
               placeholder="Key"
-              className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400"
+              className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 placeholder:text-slate-400"
               style={{ width: '120px' }}
             />
           ) : (
@@ -208,15 +208,21 @@ function JsonFormEditor({
           <select
             value={type}
             onChange={(e) => changeValueType(key, e.target.value)}
-            className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400"
-            style={{ width: '80px' }}
+            className={`border rounded p-1.5 text-xs font-medium focus:outline-none transition-colors ${
+              type === 'object' 
+                ? 'bg-purple-500/20 border-purple-400/40 text-purple-200 focus:border-purple-400' 
+                : type === 'array' 
+                ? 'bg-blue-500/20 border-blue-400/40 text-blue-200 focus:border-blue-400'
+                : 'bg-white/10 border-white/20 text-white focus:border-lime-400'
+            }`}
+            style={{ width: '90px' }}
           >
             <option value="string">String</option>
             <option value="number">Number</option>
             <option value="boolean">Boolean</option>
             <option value="null">Null</option>
-            <option value="object">Object</option>
-            <option value="array">Array</option>
+            <option value="object">{ } 对象</option>
+            <option value="array">[ ] 数组</option>
           </select>
 
           {/* 值输入 (非复杂类型) */}
@@ -224,8 +230,20 @@ function JsonFormEditor({
 
           {/* 复杂类型显示 */}
           {isComplex && (
-            <div className="flex-1 bg-white/5 border border-white/20 rounded p-1.5 text-slate-400 text-xs">
-              {isArray(value) ? `Array[${value.length}]` : `Object{${isObject(value) ? Object.keys(value).length : 0}}`}
+            <div className={`flex-1 rounded p-1.5 text-xs font-medium flex items-center gap-2 ${
+              isArray(value) 
+                ? 'bg-blue-500/10 border border-blue-400/30 text-blue-300' 
+                : 'bg-purple-500/10 border border-purple-400/30 text-purple-300'
+            }`}>
+              <span className="font-mono font-bold">
+                {isArray(value) ? '[' : '{'}
+              </span>
+              <span>
+                {isArray(value) ? `数组 · ${value.length} 项` : `对象 · ${isObject(value) ? Object.keys(value).length : 0} 个字段`}
+              </span>
+              <span className="font-mono font-bold">
+                {isArray(value) ? ']' : '}'}
+              </span>
             </div>
           )}
 
@@ -241,7 +259,9 @@ function JsonFormEditor({
 
         {/* 嵌套内容 */}
         {isComplex && !isCollapsed && (
-          <div className="ml-6 mt-2 pl-3 border-l-2 border-white/10">
+          <div className={`ml-6 mt-2 pl-3 border-l-2 ${
+            isArray(value) ? 'border-blue-400/40' : 'border-purple-400/40'
+          }`}>
             <JsonFormEditor
               data={value}
               onChange={(newValue) => updateValue(key, newValue)}
@@ -259,9 +279,10 @@ function JsonFormEditor({
         {Object.entries(data).map(([key, value], index) => renderItem(key, value, index))}
         <button
           onClick={addItem}
-          className="flex items-center gap-1 text-lime-400 hover:text-lime-300 text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 text-purple-300 hover:text-purple-200 text-xs font-medium transition-colors bg-purple-500/10 hover:bg-purple-500/20 border border-purple-400/30 rounded px-2 py-1"
         >
           <PlusIcon className="w-3 h-3" />
+          <span className="font-mono font-bold mr-1">{`{}`}</span>
           添加字段
         </button>
       </div>
@@ -274,9 +295,10 @@ function JsonFormEditor({
         {data.map((value, index) => renderItem(index, value, index))}
         <button
           onClick={addItem}
-          className="flex items-center gap-1 text-lime-400 hover:text-lime-300 text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 text-blue-300 hover:text-blue-200 text-xs font-medium transition-colors bg-blue-500/10 hover:bg-blue-500/20 border border-blue-400/30 rounded px-2 py-1"
         >
           <PlusIcon className="w-3 h-3" />
+          <span className="font-mono font-bold mr-1">{`[]`}</span>
           添加项
         </button>
       </div>
@@ -470,13 +492,13 @@ function NestedUrlParser({ initialUrl, onUrlChange }: { initialUrl: string; onUr
             {/* Port */}
             <div className="w-20">
               <label className="block text-slate-400 text-xs mb-1">Port</label>
-              <input
-                type="text"
-                value={urlComponents.port}
-                onChange={(e) => updateUrlComponent('port', e.target.value)}
-                placeholder="默认"
-                className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors"
-              />
+                <input
+                  type="text"
+                  value={urlComponents.port}
+                  onChange={(e) => updateUrlComponent('port', e.target.value)}
+                  placeholder="默认"
+                  className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
+                />
             </div>
             
             {/* Path */}
@@ -493,13 +515,13 @@ function NestedUrlParser({ initialUrl, onUrlChange }: { initialUrl: string; onUr
             {/* Hash */}
             <div className="w-32">
               <label className="block text-slate-400 text-xs mb-1">Hash</label>
-              <input
-                type="text"
-                value={urlComponents.hash}
-                onChange={(e) => updateUrlComponent('hash', e.target.value)}
-                placeholder="可选"
-                className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors"
-              />
+                <input
+                  type="text"
+                  value={urlComponents.hash}
+                  onChange={(e) => updateUrlComponent('hash', e.target.value)}
+                  placeholder="可选"
+                  className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
+                />
             </div>
           </div>
         </div>
@@ -528,7 +550,7 @@ function NestedUrlParser({ initialUrl, onUrlChange }: { initialUrl: string; onUr
                         value={key}
                         onChange={(e) => updateQueryParam(index, e.target.value, value)}
                         placeholder="Key"
-                        className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
+                        className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
                       />
                     </div>
                     <div style={{ flex: '2' }} className="flex gap-2">
@@ -537,7 +559,7 @@ function NestedUrlParser({ initialUrl, onUrlChange }: { initialUrl: string; onUr
                         value={value}
                         onChange={(e) => updateQueryParam(index, key, e.target.value)}
                         placeholder="Value"
-                        className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors"
+                        className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
                       />
                       {isUrl(value) && (
                         <button
@@ -636,13 +658,13 @@ export function UrlTool() {
 
     // 提取 URL - 改进版，支持URL在任意位置
     // 首先尝试匹配引号包裹的URL（包括最后的位置）
-    let urlMatch = curlCommand.match(/['"]?(https?:\/\/[^'"\s]+)['"]?(?:\s|$)/i);
+    let urlMatch = curlCommand.match(/['"]?(https?:\/\/[^'"\s\\]+)['"]?(?:\s|\\|\||$)/i);
     if (urlMatch) {
       result.url = urlMatch[1];
       result.queryParams = parseUrlParams(result.url);
     } else {
       // 如果没找到，尝试传统位置（curl命令后紧跟）
-      urlMatch = curlCommand.match(/curl\s+(?:-X\s+\w+\s+)?['"]?([^'">\s]+)['"]?/i);
+      urlMatch = curlCommand.match(/curl\s+(?:-X\s+\w+\s+)?['"]?([^'">\s\\]+)['"]?/i);
       if (urlMatch) {
         result.url = urlMatch[1].replace(/^['"]|['"]$/g, "");
         result.queryParams = parseUrlParams(result.url);
@@ -655,10 +677,18 @@ export function UrlTool() {
       result.method = methodMatch[1].toUpperCase();
     }
 
-    // 提取请求头
-    const headerMatches = curlCommand.matchAll(/-H\s+['"]([^:]+):\s*([^'"]+)['"]/gi);
-    for (const match of headerMatches) {
-      result.headers.push({ key: match[1].trim(), value: match[2].trim() });
+    // 提取请求头 - 改进版，支持header值中包含引号
+    // 使用更智能的正则，匹配 -H '...' 或 -H "..."
+    const headerRegex = /-H\s+(['"])((?:(?!\1).|\\.)*)\1/gi;
+    let headerMatch;
+    while ((headerMatch = headerRegex.exec(curlCommand)) !== null) {
+      const headerContent = headerMatch[2];
+      const colonIndex = headerContent.indexOf(':');
+      if (colonIndex > 0) {
+        const key = headerContent.substring(0, colonIndex).trim();
+        const value = headerContent.substring(colonIndex + 1).trim();
+        result.headers.push({ key, value });
+      }
     }
 
     // 提取 Cookie (-b 或 --cookie 参数)
@@ -668,46 +698,80 @@ export function UrlTool() {
     }
 
     // 提取请求体 - 支持 -d, --data, --data-raw, --data-binary
-    let bodyMatch = curlCommand.match(/(?:-d|--data(?:-raw|-binary)?)\s+(['"])(.+?)\1/s);
+    // 使用非贪婪匹配，支持多行和转义字符
+    let bodyMatch = curlCommand.match(/(?:-d|--data(?:-raw|-binary)?)\s+(['"])([\s\S]*?)\1(?:\s|\\|$)/m);
+    
+    // 如果上面的匹配失败，尝试更宽松的匹配（用于处理复杂的换行情况）
+    if (!bodyMatch) {
+      bodyMatch = curlCommand.match(/(?:-d|--data(?:-raw|-binary)?)\s+(['"])([\s\S]+?)\1/);
+    }
+    
     if (bodyMatch) {
-      result.body = bodyMatch[2];
+      // 提取的 body 可能包含 shell 转义，需要处理
+      let rawBody = bodyMatch[2];
       
-      // 对于 application/x-www-form-urlencoded 格式，尝试解码并格式化
-      if (result.body.includes('=') && result.body.includes('%')) {
-        try {
-          // 解析 URL 编码的表单数据
-          const params = new URLSearchParams(result.body);
-          const decoded: Record<string, string> = {};
-          params.forEach((value, key) => {
-            // 尝试解析值是否为JSON
-            try {
-              decoded[key] = JSON.parse(decodeURIComponent(value));
-            } catch {
-              decoded[key] = decodeURIComponent(value);
-            }
-          });
-          result.body = JSON.stringify(decoded, null, 2);
-        } catch {
-          // 如果解析失败，尝试作为纯JSON处理
+      // 处理 shell 转义字符（如 \' ）
+      // 注意：只处理常见的转义，避免过度处理
+      rawBody = rawBody.replace(/\\'/g, "'").replace(/\\"/g, '"');
+      
+      result.body = rawBody;
+      
+      // 先尝试作为 JSON 解析
+      try {
+        const parsed = JSON.parse(result.body);
+        result.body = JSON.stringify(parsed, null, 2);
+      } catch (jsonError) {
+        // JSON 解析失败，再尝试作为 URL 编码的表单数据
+        // 只有当包含 = 和 & 且不像 JSON 时才尝试
+        if (result.body.includes('=') && result.body.includes('&') && 
+            !result.body.trim().startsWith('{') && !result.body.trim().startsWith('[')) {
           try {
-            const parsed = JSON.parse(result.body);
-            result.body = JSON.stringify(parsed, null, 2);
+            // 解析 URL 编码的表单数据
+            const params = new URLSearchParams(result.body);
+            const decoded: Record<string, string> = {};
+            params.forEach((value, key) => {
+              // 尝试解析值是否为JSON
+              try {
+                decoded[key] = JSON.parse(decodeURIComponent(value));
+              } catch {
+                decoded[key] = decodeURIComponent(value);
+              }
+            });
+            result.body = JSON.stringify(decoded, null, 2);
           } catch {
             // 保持原样
           }
         }
-      } else {
-        // 尝试格式化 JSON
-        try {
-          const parsed = JSON.parse(result.body);
-          result.body = JSON.stringify(parsed, null, 2);
-        } catch {
-          // 保持原样
-        }
+        // 如果都不是，保持原样
       }
       
       if (!result.method || result.method === "GET") {
         result.method = "POST";
+      }
+    } else {
+      // 尝试匹配没有引号的情况（如 -d key=value 或 -d @file）
+      const simpleDataMatch = curlCommand.match(/(?:-d|--data(?:-raw|-binary)?)\s+([^'"\s\\]+)/);
+      if (simpleDataMatch) {
+        result.body = simpleDataMatch[1];
+        // 如果是 @file 格式，保持原样
+        if (!result.body.startsWith('@')) {
+          // 尝试解析为表单数据
+          if (result.body.includes('=')) {
+            try {
+              const params = new URLSearchParams(result.body);
+              const decoded: Record<string, string> = {};
+              params.forEach((value, key) => {
+                decoded[key] = decodeURIComponent(value);
+              });
+              result.body = JSON.stringify(decoded, null, 2);
+            } catch {
+              // 保持原样
+            }
+          }
+        }
+        if (!result.method || result.method === "GET") {
+          result.method = "POST";
+        }
       }
     }
 
@@ -724,8 +788,8 @@ export function UrlTool() {
       queryParams: [],
     };
 
-    // 提取 URL
-    const urlMatch = fetchCode.match(/fetch\s*\(\s*['"]([^'"]+)['"]/);
+    // 提取 URL - 支持模板字符串和普通字符串
+    const urlMatch = fetchCode.match(/fetch\s*\(\s*[`'"]([^`'"]+)[`'"]/);
     if (urlMatch) {
       result.url = urlMatch[1];
       result.queryParams = parseUrlParams(result.url);
@@ -737,26 +801,49 @@ export function UrlTool() {
       result.method = methodMatch[1].toUpperCase();
     }
 
-    // 提取请求头 - 改进的正则，支持多行和嵌套
-    const headersMatch = fetchCode.match(/['"]?headers['"]?\s*:\s*\{([\s\S]*?)\n\s*\}/);
-    if (headersMatch) {
-      const headersStr = headersMatch[1];
-      // 匹配所有的 key: value 对
-      const headerPairs = headersStr.matchAll(/['"]([^'"]+)['"]\s*:\s*['"]([^'"]*)['"]/g);
-      for (const match of headerPairs) {
-        result.headers.push({ key: match[1], value: match[2] });
+    // 提取请求头 - 改进版，更灵活地匹配结束位置
+    // 匹配 headers: { ... } 使用括号计数来找到正确的结束位置
+    const headersStartMatch = fetchCode.match(/['"]?headers['"]?\s*:\s*\{/);
+    if (headersStartMatch) {
+      const startIndex = headersStartMatch.index! + headersStartMatch[0].length;
+      let braceCount = 1;
+      let endIndex = startIndex;
+      
+      // 查找匹配的结束花括号
+      for (let i = startIndex; i < fetchCode.length && braceCount > 0; i++) {
+        if (fetchCode[i] === '{') braceCount++;
+        if (fetchCode[i] === '}') braceCount--;
+        endIndex = i;
+      }
+      
+      if (braceCount === 0) {
+        const headersStr = fetchCode.substring(startIndex, endIndex);
+        // 匹配所有的 key: value 对
+        const headerPairs = headersStr.matchAll(/['"]([^'"]+)['"]\s*:\s*['"]([^'"]*)['"]/g);
+        for (const match of headerPairs) {
+          result.headers.push({ key: match[1], value: match[2] });
+        }
       }
     }
 
     // 提取请求体
-    // 先尝试匹配 JSON.stringify
-    let bodyMatch = fetchCode.match(/['"]?body['"]?\s*:\s*JSON\.stringify\s*\(\s*(\{[\s\S]*?\})\s*\)/);
+    // 先尝试匹配 JSON.stringify，支持对象和数组
+    let bodyMatch = fetchCode.match(/['"]?body['"]?\s*:\s*JSON\.stringify\s*\(\s*([\[{][\s\S]*?[\]}])\s*\)/);
     if (bodyMatch) {
       try {
+        // 尝试直接解析为 JSON
         const parsed = JSON.parse(bodyMatch[1]);
         result.body = JSON.stringify(parsed, null, 2);
-      } catch {
-        result.body = bodyMatch[1];
+      } catch (e) {
+        // 如果失败，可能是因为有 JavaScript 表达式，尝试简单清理
+        try {
+          // 移除尾随逗号（JavaScript 允许但 JSON 不允许）
+          const cleaned = bodyMatch[1].replace(/,(\s*[}\]])/g, '$1');
+          const parsed = JSON.parse(cleaned);
+          result.body = JSON.stringify(parsed, null, 2);
+        } catch {
+          result.body = bodyMatch[1];
+        }
       }
     } else {
       // 尝试匹配字符串格式（包括转义的 JSON 字符串）
@@ -765,7 +852,7 @@ export function UrlTool() {
       if (bodyMatch) {
         let bodyStr = bodyMatch[1];
         // 处理转义字符
-        bodyStr = bodyStr.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        bodyStr = bodyStr.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
         // 尝试解析和格式化 JSON
         try {
           const parsed = JSON.parse(bodyStr);
@@ -865,16 +952,21 @@ export function UrlTool() {
   const generateCurl = (): string => {
     if (!parsed.url) return "";
 
-    let curl = `curl -X ${parsed.method} '${parsed.url}'`;
+    // 转义单引号，用于 shell 命令
+    const escapeShellSingleQuote = (str: string) => {
+      return str.replace(/'/g, "'\\''");
+    };
+
+    let curl = `curl -X ${parsed.method} '${escapeShellSingleQuote(parsed.url)}'`;
 
     parsed.headers.forEach(({ key, value }) => {
       if (key && value) {
-        curl += ` \\\n  -H '${key}: ${value}'`;
+        curl += ` \\\n  -H '${escapeShellSingleQuote(key)}: ${escapeShellSingleQuote(value)}'`;
       }
     });
 
     if (parsed.body) {
-      curl += ` \\\n  -d '${parsed.body}'`;
+      curl += ` \\\n  -d '${escapeShellSingleQuote(parsed.body)}'`;
     }
 
     return curl;
@@ -883,6 +975,17 @@ export function UrlTool() {
   // 生成 fetch 代码
   const generateFetch = (): string => {
     if (!parsed.url) return "";
+
+    // 转义 JavaScript 字符串中的特殊字符
+    const escapeJsString = (str: string) => {
+      return str
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t');
+    };
 
     const options: any = {
       method: parsed.method,
@@ -906,11 +1009,14 @@ export function UrlTool() {
         JSON.parse(parsed.body);
         options.body = `JSON.stringify(${parsed.body})`;
       } catch {
-        options.body = `'${parsed.body}'`;
+        // 不是 JSON，需要转义
+        options.body = `'${escapeJsString(parsed.body)}'`;
       }
     }
 
-    let fetchCode = `fetch('${parsed.url}', ${JSON.stringify(options, null, 2)})`;
+    // 转义 URL
+    const escapedUrl = escapeJsString(parsed.url);
+    let fetchCode = `fetch('${escapedUrl}', ${JSON.stringify(options, null, 2)})`;
 
     // 处理 body 的特殊格式
     if (parsed.body) {
@@ -921,7 +1027,11 @@ export function UrlTool() {
           `body: JSON.stringify(${parsed.body})`
         );
       } catch {
-        fetchCode = fetchCode.replace(`"body": "'${parsed.body}'"`, `body: '${parsed.body}'`);
+        const escapedBody = escapeJsString(parsed.body);
+        fetchCode = fetchCode.replace(
+          `"body": "'${escapedBody}'"`,
+          `body: '${escapedBody}'`
+        );
       }
     }
 
@@ -1034,7 +1144,7 @@ export function UrlTool() {
   const calculateBodyRows = (body: string): number => {
     if (!body) return 3; // 空内容默认 3 行
     const lines = body.split('\n').length;
-    return Math.min(Math.max(lines, 3), 30); // 最小 6 行，最大 30 行
+    return Math.max(lines, 3); // 最小 3 行，无最大限制
   };
 
   // 复制到剪贴板
@@ -1114,7 +1224,7 @@ export function UrlTool() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="示例:&#10;https://api.example.com/users?page=1&#10;或&#10;curl -X POST 'https://api.example.com/data' -H 'Content-Type: application/json' -d '{&quot;key&quot;:&quot;value&quot;}'&#10;或&#10;fetch('https://api.example.com/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({key: 'value'}) })"
-            className="w-full bg-white/10 border border-white/20 rounded-lg p-4 text-white font-mono text-sm resize-y min-h-[120px] focus:outline-none focus:border-lime-400 transition-colors"
+            className="w-full bg-white/10 border border-white/20 rounded-lg p-4 text-white font-mono text-sm resize-y min-h-[120px] focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
           />
           <div className="mt-3 flex gap-3">
             <button
@@ -1236,7 +1346,7 @@ export function UrlTool() {
                     value={urlComponents.port}
                     onChange={(e) => updateUrlComponent('port', e.target.value)}
                     placeholder="默认"
-                    className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors"
+                    className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
                   />
                 </div>
 
@@ -1259,7 +1369,7 @@ export function UrlTool() {
                     value={urlComponents.hash}
                     onChange={(e) => updateUrlComponent('hash', e.target.value)}
                     placeholder="可选"
-                    className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors"
+                    className="w-full bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs font-mono focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -1316,7 +1426,7 @@ export function UrlTool() {
                             value={key}
                             onChange={(e) => updateHeader(index, e.target.value, value)}
                             placeholder="Key"
-                            className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
+                            className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
                             style={{ flex: '1' }}
                           />
                           <input
@@ -1324,7 +1434,7 @@ export function UrlTool() {
                             value={value}
                             onChange={(e) => updateHeader(index, key, e.target.value)}
                             placeholder="Value"
-                            className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
+                            className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
                             style={{ flex: '2' }}
                           />
                           <button
@@ -1367,7 +1477,7 @@ export function UrlTool() {
                               value={key}
                               onChange={(e) => updateQueryParam(index, e.target.value, value)}
                               placeholder="Key"
-                              className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
+                              className="bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
                               style={{ flex: '1' }}
                             />
                             <div style={{ flex: '2' }} className="flex gap-2">
@@ -1376,7 +1486,7 @@ export function UrlTool() {
                                 value={value}
                                 onChange={(e) => updateQueryParam(index, key, e.target.value)}
                                 placeholder="Value"
-                                className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors"
+                                className="flex-1 bg-white/10 border border-white/20 rounded p-1.5 text-white text-xs focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
                               />
                               {isUrl(value) && (
                                 <button
@@ -1486,14 +1596,14 @@ export function UrlTool() {
                         onChange={(e) => setParsed({ ...parsed, body: e.target.value })}
                         placeholder="JSON 或文本数据"
                         rows={calculateBodyRows(parsed.body || "")}
-                        className="w-full bg-white/10 border border-white/20 rounded p-2 text-white font-mono text-xs resize-y focus:outline-none focus:border-lime-400 transition-colors overflow-y-auto"
-                        style={{ maxHeight: '600px', minHeight: '120px' }}
+                        className="w-full bg-white/10 border border-white/20 rounded p-2 text-white font-mono text-xs resize-y focus:outline-none focus:border-lime-400 transition-colors overflow-y-auto placeholder:text-slate-400"
+                        style={{ minHeight: '120px' }}
                       />
                     )}
 
                     {/* 表单模式 */}
                     {bodyEditMode === 'form' && (
-                      <div className="bg-white/10 border border-white/20 rounded p-3 max-h-[600px] overflow-y-auto">
+                      <div className="bg-white/10 border border-white/20 rounded p-3">
                         {parsed.body && parsed.body.trim() ? (
                           <JsonFormEditor
                             data={bodyFormData}
