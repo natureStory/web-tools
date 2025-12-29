@@ -752,11 +752,19 @@ export function UrlTool() {
       queryParams: [],
     };
 
-    // 提取 URL
-    const urlMatch = curlCommand.match(/curl\s+(?:-X\s+\w+\s+)?['"]?([^'">\s]+)['"]?/i);
+    // 提取 URL - 改进版，支持URL在任意位置
+    // 首先尝试匹配引号包裹的URL（包括最后的位置）
+    let urlMatch = curlCommand.match(/['"]?(https?:\/\/[^'"\s]+)['"]?(?:\s|$)/i);
     if (urlMatch) {
-      result.url = urlMatch[1].replace(/^['"]|['"]$/g, "");
+      result.url = urlMatch[1];
       result.queryParams = parseUrlParams(result.url);
+    } else {
+      // 如果没找到，尝试传统位置（curl命令后紧跟）
+      urlMatch = curlCommand.match(/curl\s+(?:-X\s+\w+\s+)?['"]?([^'">\s]+)['"]?/i);
+      if (urlMatch) {
+        result.url = urlMatch[1].replace(/^['"]|['"]$/g, "");
+        result.queryParams = parseUrlParams(result.url);
+      }
     }
 
     // 提取方法
@@ -771,17 +779,51 @@ export function UrlTool() {
       result.headers.push({ key: match[1].trim(), value: match[2].trim() });
     }
 
-    // 提取请求体
-    const bodyMatch = curlCommand.match(/(?:-d|--data(?:-raw)?)\s+(['"])(.+?)\1/s);
+    // 提取 Cookie (-b 或 --cookie 参数)
+    const cookieMatch = curlCommand.match(/(?:-b|--cookie)\s+['"]([^'"]+)['"]/i);
+    if (cookieMatch) {
+      result.headers.push({ key: 'Cookie', value: cookieMatch[1].trim() });
+    }
+
+    // 提取请求体 - 支持 -d, --data, --data-raw, --data-binary
+    let bodyMatch = curlCommand.match(/(?:-d|--data(?:-raw|-binary)?)\s+(['"])(.+?)\1/s);
     if (bodyMatch) {
       result.body = bodyMatch[2];
-      // 尝试格式化 JSON
-      try {
-        const parsed = JSON.parse(result.body);
-        result.body = JSON.stringify(parsed, null, 2);
-      } catch {
-        // 保持原样
+      
+      // 对于 application/x-www-form-urlencoded 格式，尝试解码并格式化
+      if (result.body.includes('=') && result.body.includes('%')) {
+        try {
+          // 解析 URL 编码的表单数据
+          const params = new URLSearchParams(result.body);
+          const decoded: Record<string, string> = {};
+          params.forEach((value, key) => {
+            // 尝试解析值是否为JSON
+            try {
+              decoded[key] = JSON.parse(decodeURIComponent(value));
+            } catch {
+              decoded[key] = decodeURIComponent(value);
+            }
+          });
+          result.body = JSON.stringify(decoded, null, 2);
+        } catch {
+          // 如果解析失败，尝试作为纯JSON处理
+          try {
+            const parsed = JSON.parse(result.body);
+            result.body = JSON.stringify(parsed, null, 2);
+          } catch {
+            // 保持原样
+          }
+        }
+      } else {
+        // 尝试格式化 JSON
+        try {
+          const parsed = JSON.parse(result.body);
+          result.body = JSON.stringify(parsed, null, 2);
+        } catch {
+          // 保持原样
+        }
       }
+      
       if (!result.method || result.method === "GET") {
         result.method = "POST";
       }
