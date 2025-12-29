@@ -30,30 +30,38 @@ export function ToolTabs({ tools, defaultTool, onTabChange, children }: ToolTabs
   
   // 从 URL 参数读取初始 tab，如果无效则使用默认值
   const [activeTab, setActiveTab] = useState(() => getValidTab(searchParams.get("tab")));
+  
+  // 标记是否已经初始化（避免 URL 变化时重复更新状态）
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // 初始化时，如果 URL 中没有 tab 参数，则设置默认值
+  // 只在首次挂载时从 URL 读取初始值
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
-    if (!tabFromUrl) {
-      setSearchParams({ tab: activeTab }, { replace: true });
+    const defaultValue = defaultTool || tools[0]?.id;
+    
+    // 如果 URL 中有默认值的参数，清除它
+    if (tabFromUrl === defaultValue) {
+      setSearchParams({}, { replace: true });
     }
+    
+    setIsInitialized(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 只在组件挂载时执行一次
 
-  // 当 URL 参数变化时更新 activeTab（处理浏览器前进/后退）
-  useEffect(() => {
-    const tabFromUrl = searchParams.get("tab");
-    if (tabFromUrl) {
-      const isValid = tools.some(tool => tool.id === tabFromUrl && !tool.comingSoon);
-      if (isValid && tabFromUrl !== activeTab) {
-        setActiveTab(tabFromUrl);
-      }
-    }
-  }, [searchParams, tools, activeTab]);
-
   const handleTabChange = (toolId: string) => {
+    const defaultValue = defaultTool || tools[0]?.id;
+    
     setActiveTab(toolId);
+    
     // 更新 URL 参数
-    setSearchParams({ tab: toolId }, { replace: false });
+    if (toolId === defaultValue) {
+      // 如果是默认值，移除 tab 参数
+      setSearchParams({}, { replace: true });
+    } else {
+      // 如果不是默认值，添加 tab 参数
+      setSearchParams({ tab: toolId }, { replace: true });
+    }
+    
     onTabChange?.(toolId);
   };
 
