@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { ClipboardIcon, CheckIcon, ExternalLinkIcon, ChevronDownIcon, ChevronRightIcon, PlusIcon, TrashIcon } from "@heroicons/react/outline";
+import { ClipboardIcon, CheckIcon, ExternalLinkIcon, ChevronDownIcon, ChevronRightIcon, PlusIcon, TrashIcon, SaveIcon, PencilIcon } from "@heroicons/react/outline";
+import { saveUrlDocument, updateUrlDocument, UrlDocument } from "~/urlDoc.client";
+import { SavedUrlsList } from "../SavedUrlsList";
 
 interface ParsedRequest {
   method: string;
@@ -631,6 +633,12 @@ export function UrlTool() {
   const [expandedNestedUrls, setExpandedNestedUrls] = useState<Record<number, boolean>>({}); // 嵌套 URL 展开状态
   const [bodyEditMode, setBodyEditMode] = useState<BodyEditMode>('form'); // 请求体编辑模式，默认为表单模式
   const [bodyFormData, setBodyFormData] = useState<JsonValue>({}); // 表单模式的数据
+  
+  // 保存和改名相关状态
+  const [savedDocId, setSavedDocId] = useState<string | null>(null);
+  const [documentTitle, setDocumentTitle] = useState("");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
   // 解析 URL 参数，保持原始顺序
   const parseUrlParams = (url: string): Array<{ key: string; value: string }> => {
@@ -895,6 +903,10 @@ export function UrlTool() {
     }
 
     setParsed(result);
+    
+    // 重置保存状态（因为是解析新的URL）
+    setSavedDocId(null);
+    setDocumentTitle("");
     
     // 如果有请求体，尝试解析为表单数据
     if (result.body) {
@@ -1179,6 +1191,134 @@ export function UrlTool() {
     }
   };
 
+  // 保存 URL 到 IndexDB
+  const handleSave = async () => {
+    if (!parsed.url) return;
+
+    try {
+      if (savedDocId) {
+        // 如果已经保存过，更新现有文档
+        const updates = {
+          url: parsed.url,
+          method: parsed.method,
+          headers: parsed.headers,
+          body: parsed.body || "",
+          queryParams: parsed.queryParams,
+        };
+        
+        // 只有当有标题时才更新标题
+        if (documentTitle) {
+          Object.assign(updates, { title: documentTitle });
+        }
+        
+        const updatedDoc = await updateUrlDocument(savedDocId, updates);
+        
+        // 更新成功后同步标题
+        if (updatedDoc && updatedDoc.title) {
+          setDocumentTitle(updatedDoc.title);
+        }
+      } else {
+        // 创建新文档
+        const doc = await saveUrlDocument(
+          parsed.url,
+          parsed.method,
+          parsed.headers,
+          parsed.body || "",
+          parsed.queryParams,
+          documentTitle || undefined
+        );
+        
+        setSavedDocId(doc.id);
+        setDocumentTitle(doc.title);
+        
+        // 如果用户没有输入标题，保存后自动进入编辑模式
+        if (!documentTitle.trim()) {
+          setTimeout(() => setIsEditingTitle(true), 100);
+        }
+      }
+      
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 2000);
+    } catch (err) {
+      console.error("保存失败:", err);
+      alert("保存失败，请重试");
+    }
+  };
+
+  // 更新标题
+  const handleUpdateTitle = async () => {
+    if (!savedDocId) {
+      setIsEditingTitle(false);
+      return;
+    }
+
+    // 如果标题为空，使用默认标题
+    const finalTitle = documentTitle.trim() || "未命名 URL";
+    
+    try {
+      await updateUrlDocument(savedDocId, {
+        title: finalTitle,
+      });
+      setDocumentTitle(finalTitle);
+      setIsEditingTitle(false);
+    } catch (err) {
+      console.error("更新标题失败:", err);
+      alert("更新标题失败，请重试");
+    }
+  };
+
+  // 从保存的文档加载URL
+  const handleLoadUrl = (doc: UrlDocument) => {
+    // 重建URL字符串
+    let urlString = doc.url;
+    try {
+      const urlObj = new URL(doc.url);
+      urlObj.search = '';
+      doc.queryParams.forEach(({ key, value }) => {
+        if (key && value) {
+          urlObj.searchParams.append(key, value);
+        }
+      });
+      urlString = urlObj.toString();
+    } catch {
+      urlString = doc.url;
+    }
+
+    // 批量更新所有状态
+    setSavedDocId(doc.id);
+    setDocumentTitle(doc.title);
+    setInput(urlString);
+    setParsed({
+      method: doc.method,
+      url: doc.url,
+      headers: doc.headers,
+      body: doc.body || "",
+      queryParams: doc.queryParams,
+    });
+
+    // 如果有请求体，尝试解析为表单数据
+    if (doc.body) {
+      try {
+        const jsonData = JSON.parse(doc.body);
+        setBodyFormData(jsonData);
+      } catch {
+        setBodyFormData({});
+      }
+    } else {
+      setBodyFormData({});
+    }
+
+    // 如果有请求头，显示请求头区域
+    if (doc.headers.length > 0) {
+      setShowHeaders(true);
+    } else {
+      setShowHeaders(false);
+    }
+
+    // 滚动到顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // 解析 URL 组件
   const parseUrlComponents = (url: string) => {
     try {
@@ -1234,7 +1374,65 @@ export function UrlTool() {
   return (
     <div>
       <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 shadow-2xl">
-        <h2 className="text-2xl font-semibold text-white mb-6">URL 工具</h2>
+        {/* 标题行 - 包含保存和改名功能 */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-semibold text-white">URL 工具</h2>
+          
+          {/* 保存和改名区域 */}
+          {parsed.url && (
+            <div className="flex items-center gap-3">
+              {/* 标题输入/显示 */}
+              {isEditingTitle ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={documentTitle}
+                    onChange={(e) => setDocumentTitle(e.target.value)}
+                    onBlur={handleUpdateTitle}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleUpdateTitle();
+                      } else if (e.key === 'Escape') {
+                        setIsEditingTitle(false);
+                      }
+                    }}
+                    placeholder="输入名称"
+                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-lime-400 transition-colors placeholder:text-slate-400"
+                    style={{ width: '200px' }}
+                    autoFocus
+                  />
+                </div>
+              ) : savedDocId ? (
+                <button
+                  onClick={() => setIsEditingTitle(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors border border-white/20"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                  <span>{documentTitle || "未命名 URL"}</span>
+                </button>
+              ) : null}
+              
+              {/* 保存按钮 */}
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 px-4 py-2 bg-lime-400 hover:bg-lime-300 text-slate-900 rounded-lg text-sm font-semibold transition-colors"
+                title="保存到 IndexDB"
+              >
+                {showSaveSuccess ? (
+                  <>
+                    <CheckIcon className="w-4 h-4" />
+                    已保存
+                  </>
+                ) : (
+                  <>
+                    <SaveIcon className="w-4 h-4" />
+                    保存
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* 输入区域 */}
         <div className="mb-6">
@@ -1654,6 +1852,11 @@ export function UrlTool() {
 
           </div>
         )}
+      </div>
+
+      {/* 保存的 URL 列表 */}
+      <div className="mt-4 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 shadow-2xl">
+        <SavedUrlsList onLoadUrl={handleLoadUrl} />
       </div>
     </div>
   );
